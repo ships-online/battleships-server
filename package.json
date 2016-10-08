@@ -11,5 +11,8 @@
   "devDependencies": {
     "gulp": "^3.9.1",
     "guppy-pre-commit": "^0.4.0"
+  },
+  "dependencies": {
+    "socket.io": "^1.5.0"
   }
 }
