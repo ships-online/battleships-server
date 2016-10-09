@@ -5,8 +5,8 @@ const config = {
 };
 
 const gulp = require( 'gulp' );
-const lintTasks = require( 'battle-ships-core/dev/tasks/lint.js' )( config );
-const compileTasks = require( 'battle-ships-core/dev/tasks/compile.js' )( config );
+const lintTasks = require( 'battle-ships-engine/dev/tasks/lint.js' )( config );
+const compileTasks = require( 'battle-ships-engine/dev/tasks/compile.js' )( config );
 
 // Compile core to common js format.
 gulp.task( 'compile', () => compileTasks.compile( './core', 'cjs' ) );
