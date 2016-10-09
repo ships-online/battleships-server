@@ -1,10 +1,10 @@
 {
-  "name": "server",
+  "name": "battle-ships-server",
   "version": "0.0.1",
-  "description": "Battle ships game server",
+  "description": "Battle ships server",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node_modules/.bin/gulp test"
   },
   "author": "Oskar Wróbel <kontakt@oskarwrobel.pl>",
   "license": "ISC",
