@@ -9,10 +9,12 @@
   "author": "Oskar Wróbel <kontakt@oskarwrobel.pl>",
   "license": "ISC",
   "devDependencies": {
+    "del": "^2.2.2",
     "gulp": "^3.9.1",
     "guppy-pre-commit": "^0.4.0"
   },
   "dependencies": {
+    "battle-ships-engine": "file:///Users/wrb/Sites/games/battle-ships/battle-ships-engine",
     "socket.io": "^1.5.0"
   }
 }

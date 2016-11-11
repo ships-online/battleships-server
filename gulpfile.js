@@ -1,16 +1,21 @@
 'use strict';
 
 const config = {
-	ROOT_PATH: '.'
+	ROOT_PATH: __dirname
 };
 
+const path = require( 'path' );
 const gulp = require( 'gulp' );
+const del = require( 'del' );
 const lintTasks = require( 'battle-ships-engine/dev/tasks/lint.js' )( config );
-const compileTasks = require( 'battle-ships-engine/dev/tasks/compile.js' )( config );
+const engineCompileTasks = require( 'battle-ships-engine/dev/tasks/compile.js' )( config );
 
-// Compile core to common js format.
-gulp.task( 'compile', () => compileTasks.compile( './core', 'cjs' ) );
+// Compile engine to common js format.
+gulp.task( 'clean:compile', () => del( './engine' ) );
+gulp.task( 'compile:engine', [ 'clean:compile' ], () => engineCompileTasks.compile( '../battle-ships-engine/src', './engine', 'cjs' ) );
 
 // JS code sniffer.
-gulp.task( 'lint', () => lintTasks.lint( '**/*.js' ) );
-gulp.task( 'pre-commit', () => lintTasks.lintStaged( '**/*.js' ) );
+const jsFiles = [ path.join( config.ROOT_PATH, '**', '*.js' ) ];
+
+gulp.task( 'lint', () => lintTasks.lint( jsFiles ) );
+gulp.task( 'pre-commit', () => lintTasks.lintStaged( jsFiles ) );
