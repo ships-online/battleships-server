@@ -1,11 +1,16 @@
 {
-  "name": "battle-ships-server",
+  "name": "battleships-server",
   "version": "0.0.1",
-  "description": "Battle ships server",
+  "description": "The server of Battleships game.",
   "main": "index.js",
   "scripts": {
-    "test": "node_modules/.bin/gulp test"
+    "lint": "./node_modules/.bin/gulp lint",
+    "test": "./node_modules/.bin/gulp test"
   },
+  "keywords": [
+    "battleships",
+    "game"
+  ],
   "author": "Oskar Wróbel <kontakt@oskarwrobel.pl>",
   "license": "ISC",
   "devDependencies": {
@@ -14,7 +19,7 @@
     "guppy-pre-commit": "^0.4.0"
   },
   "dependencies": {
-    "battle-ships-engine": "file:///Users/wrb/Sites/games/battle-ships/battle-ships-engine",
+    "battleships-engine": "file:///Users/wrb/Sites/games/battle-ships/battleships-engine",
     "socket.io": "^1.5.0"
   }
 }
