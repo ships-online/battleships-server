@@ -14,12 +14,12 @@
   "author": "Oskar Wróbel <kontakt@oskarwrobel.pl>",
   "license": "ISC",
   "devDependencies": {
-    "del": "^2.2.2",
     "gulp": "^3.9.1",
-    "guppy-pre-commit": "^0.4.0"
+    "guppy-pre-commit": "^0.4.0",
+    "battleships-dev-tools": "../battleships-dev-tools"
   },
   "dependencies": {
-    "battleships-dev-tools": "../battleships-dev-tools",
-    "socket.io": "^1.5.0"
+    "socket.io": "^1.5.0",
+    "battleships-engine": "../battleships-engine"
   }
 }
