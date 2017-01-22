@@ -1,9 +1,10 @@
 'use strict';
 
 const OpponentBattlefield = require( '../lib/battleships-engine/src/opponentbattlefield.js' ).default;
+const ShipsCollection = require( '../lib/battleships-engine/src/shipscollection.js' ).default;
 const Player = require( './player.js' );
-const ObservableMixin = require( '../lib/battleships-utils/src/observablemixin.js' );
-const mix = require( '../lib/battleships-utils/src/mix.js' );
+const ObservableMixin = require( '../lib/battleships-utils/src/observablemixin.js' ).default;
+const mix = require( '../lib/battleships-utils/src/mix.js' ).default;
 
 const shortId = require( 'shortid' );
 
@@ -15,8 +16,8 @@ class Game {
 
 		this.set( 'isStarted', false );
 
-		this.player = new Player( new OpponentBattlefield( gameData.size, gameData.shipsConfig ) );
-		this.opponent = new Player( new OpponentBattlefield( gameData.size, gameData.shipsConfig ) );
+		this.player = new Player( new OpponentBattlefield( gameData.size, gameData.shipsSchema ) );
+		this.opponent = new Player( new OpponentBattlefield( gameData.size, gameData.shipsSchema ) );
 
 		this.bind( 'isStarted' )
 			.to( this.player, 'isReady', this.opponent, 'isReady', ( playerReady, opponentReady ) => {
@@ -30,9 +31,9 @@ class Game {
 		socket.join( this.id );
 		socket.emit( 'createResponse', { response: this.id } );
 
-		this._handlePlayerReady( this.player );
+		this._handlePlayerReady( this.player, this.opponent );
 
-		this.once( 'change:isStarted', () => this.io.clients.in( this.id ).emit( 'started' ) );
+		this.once( 'change:isStarted', () => this.io.sockets.in( this.id ).emit( 'started' ) );
 	}
 
 	join( socket ) {
@@ -57,22 +58,38 @@ class Game {
 				this.opponent.socket = socket;
 				socket.broadcast.to( this.id ).emit( 'accepted' );
 
-				this._handlePlayerReady( this.opponent );
+				this._handlePlayerReady( this.opponent, this.player );
 			}
 		} );
 	}
 
-	_handlePlayerReady( player ) {
+	_handlePlayerReady( player, opponent ) {
 		const socket = player.socket;
 
 		socket.on( 'ready', ( ships ) => {
 			if ( player.battlefield.validateShips( ships ) ) {
+
+				player.battlefield.shipsCollection.add( ShipsCollection.createShipsFromJSON( ships ) );
+
 				player.isReady = true;
 				socket.emit( 'readyResponse' );
 				socket.broadcast.to( this.id ).emit( 'ready' );
+
+				this._handlePlayerShoot( player, opponent );
 			} else {
 				socket.emit( 'playerReadyResponse', { error: 'Invalid ships configuration.' } );
 			}
+		} );
+	}
+
+	_handlePlayerShoot( player, opponent ) {
+		const socket = player.socket;
+
+		socket.on( 'shoot', ( position ) => {
+			const result = opponent.battlefield.shoot( position );
+
+			socket.emit( 'shootResponse', { response: result } );
+			socket.broadcast.to( this.id ).emit( 'shoot', result );
 		} );
 	}
 
