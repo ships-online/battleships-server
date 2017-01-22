@@ -15,24 +15,24 @@ const compileTasks = require( 'battleships-dev-tools/lib/tasks/compile.js' )( co
 gulp.task( 'relink', linkTask.relink );
 
 // build engine and utils to commonjs format.
-gulp.task( 'clean:build:engine', () => utils.del( './lib/battleships-engine' ) );
-gulp.task( 'clean:build:utils', () => utils.del( './lib/battleships-utils' ) );
+gulp.task( 'clean:build:engine', () => utils.del( path.join( '.', 'lib', 'battleships-engine' ) ) );
+gulp.task( 'clean:build:utils', () => utils.del( path.join( '.', 'lib', '@ckeditor' ) ) );
 
 gulp.task( 'build:engine', [ 'clean:build:engine' ], () => {
-	compileTasks.build(
+	return compileTasks.build(
 		path.join( '.', 'node_modules', 'battleships-engine' ),
 		path.join( '.', 'lib', 'battleships-engine' ),
 		{
-			relativeTo: path.join( '..', '..', path.sep ),
+			relativeTo: '../../',
 			format: 'cjs'
 		}
 	);
 } );
 
 gulp.task( 'build:utils', [ 'clean:build:utils' ], () => {
-	compileTasks.build(
-		path.join( '.', 'node_modules', 'battleships-utils' ),
-		path.join( '.', 'lib', 'battleships-utils' ),
+	return compileTasks.build(
+		path.join( '.', 'node_modules', '@ckeditor', 'ckeditor5-utils' ),
+		path.join( '.', 'lib', '@ckeditor', 'ckeditor5-utils' ),
 		{
 			format: 'cjs'
 		}

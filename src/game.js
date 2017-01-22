@@ -1,10 +1,10 @@
 'use strict';
 
+const Player = require( './player.js' );
 const OpponentBattlefield = require( '../lib/battleships-engine/src/opponentbattlefield.js' ).default;
 const ShipsCollection = require( '../lib/battleships-engine/src/shipscollection.js' ).default;
-const Player = require( './player.js' );
-const ObservableMixin = require( '../lib/battleships-utils/src/observablemixin.js' ).default;
-const mix = require( '../lib/battleships-utils/src/mix.js' ).default;
+const ObservableMixin = require( '../lib/@ckeditor/ckeditor5-utils/src/observablemixin.js' ).default;
+const mix = require( '../lib/@ckeditor/ckeditor5-utils/src/mix.js' ).default;
 
 const shortId = require( 'shortid' );
 
