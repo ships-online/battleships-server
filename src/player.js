@@ -9,6 +9,10 @@ class Player {
 
 		this.set( 'isReady', false );
 	}
+
+	get id() {
+		return this.socket.id;
+	}
 }
 
 mix( Player, ObservableMixin );
