@@ -27,7 +27,7 @@ class Games {
 						playerId: socket.id,
 						opponentId: game.player.id,
 						isOpponentReady: game.player.isReady,
-						interestedPlayers: this._getNumberOfPlayersInRoom( game.id )
+						interestedPlayers: this._getNumberOfPlayersInRoom( game.id ) - 1
 					};
 
 					socket.emit( 'joinResponse', { response } );
@@ -57,8 +57,6 @@ class Games {
 
 		// When game is available.
 		if ( game && !game.isStarted ) {
-			const interestedPlayers = this._getNumberOfPlayersInRoom( game.id );
-
 			// Add client to the game.
 			game.join( socket );
 
@@ -66,7 +64,9 @@ class Games {
 			socket.join( game.id );
 
 			// Let know the rest players in the room that new socket joined.
-			socket.broadcast.to( game.id ).emit( 'joined', { interestedPlayers } );
+			socket.broadcast.to( game.id ).emit( 'joined', {
+				interestedPlayers: this._getNumberOfPlayersInRoom( game.id ) - 1
+			} );
 
 			return Promise.resolve( game );
 
@@ -83,19 +83,20 @@ class Games {
 	}
 
 	_handleClientLeft( game ) {
-		const room = this._io.sockets.adapter.rooms[ game.id ];
-		const playersInRoom = room ? room.length - 1 : 0;
-
 		if ( game.isStarted ) {
 			this._io.sockets.in( game.id ).emit( 'gameOver' );
 		} else {
 			game.opponent.socket = null;
-			this._io.sockets.in( game.id ).emit( 'left', { interestedPlayers: playersInRoom } );
+			this._io.sockets.in( game.id ).emit( 'left', {
+				interestedPlayers: this._getNumberOfPlayersInRoom( game.id ) - 1
+			} );
 		}
 	}
 
 	_getNumberOfPlayersInRoom( roomId ) {
-		return this._io.sockets.adapter.rooms[ roomId ].length;
+		const room = this._io.sockets.adapter.rooms[ roomId ];
+
+		return room ? room.length : 0;
 	}
 }
 
