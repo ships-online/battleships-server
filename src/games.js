@@ -31,7 +31,7 @@ class Games {
 					};
 
 					socket.emit( 'joinResponse', { response } );
-					socket.on( 'disconnect', () => this._handleClientLeft( game ) );
+					socket.on( 'disconnect', () => this._handleClientLeft( game, socket.id ) );
 				} )
 				.catch( error => socket.emit( 'joinResponse', error ) );
 		} );
@@ -82,11 +82,14 @@ class Games {
 		game.destroy();
 	}
 
-	_handleClientLeft( game ) {
-		if ( game.isStarted ) {
+	_handleClientLeft( game, clientId ) {
+		if ( game.isStarted && game.opponent.id == clientId ) {
 			this._io.sockets.in( game.id ).emit( 'gameOver' );
 		} else {
-			game.opponent.socket = null;
+			if ( game.opponent.id == clientId ) {
+				game.opponent.socket = null;
+			}
+
 			this._io.sockets.in( game.id ).emit( 'left', {
 				interestedPlayers: this._getNumberOfPlayersInRoom( game.id ) - 1
 			} );

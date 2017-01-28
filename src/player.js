@@ -11,7 +11,7 @@ class Player {
 	}
 
 	get id() {
-		return this.socket.id;
+		return this.socket ? this.socket.id : null;
 	}
 }
 
