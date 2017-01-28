@@ -33,12 +33,6 @@ class Game {
 	create( socket ) {
 		this.player.socket = socket;
 
-		socket.join( this.id );
-		socket.emit( 'createResponse', { response: {
-			gameId: this.id,
-			playerId: this.player.id
-		} } );
-
 		this._handlePlayerReady( this.player, this.opponent );
 
 		this.once( 'change:isStarted', () => {
@@ -48,22 +42,6 @@ class Game {
 	}
 
 	join( socket ) {
-		const playersInRoom = this.io.sockets.adapter.rooms[ this.id ].length;
-
-		socket.join( this.id );
-		socket.broadcast.to( this.id ).emit( 'joined', { interestedPlayers: playersInRoom } );
-		socket.emit( 'joinResponse', {
-			response: {
-				status: 'available',
-				gameData: this.gameData,
-				opponentId: this.player.id,
-				playerId: socket.id,
-				isOpponentReady: this.player.isReady,
-				interestedPlayers: playersInRoom
-
-			}
-		} );
-
 		socket.on( 'accept', () => {
 			if ( this.isStarted ) {
 				socket.emit( 'acceptResponse', { error: 'not-available' } );
