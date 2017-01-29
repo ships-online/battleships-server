@@ -9,20 +9,20 @@ const mix = require( '../lib/@ckeditor/ckeditor5-utils/src/mix.js' ).default;
 const shortId = require( 'shortid' );
 
 class Game {
-	constructor( io, gameData ) {
+	constructor( io, gameSettings ) {
 		this.io = io;
 
 		this.id = shortId.generate();
 
-		this.gameData = gameData;
+		this.gameSettings = gameSettings;
 
 		this.set( 'activePlayer', null );
 
 		this.set( 'isStarted', false );
 
-		this.player = new Player( new OpponentBattlefield( gameData.size, gameData.shipsSchema ) );
+		this.player = new Player( new OpponentBattlefield( gameSettings.size, gameSettings.shipsSchema ) );
 
-		this.opponent = new Player( new OpponentBattlefield( gameData.size, gameData.shipsSchema ) );
+		this.opponent = new Player( new OpponentBattlefield( gameSettings.size, gameSettings.shipsSchema ) );
 
 		this.bind( 'isStarted' )
 			.to( this.player, 'isReady', this.opponent, 'isReady', ( playerReady, opponentReady ) => {
@@ -79,15 +79,18 @@ class Game {
 
 		socket.on( 'shoot', ( position ) => {
 			if ( this.activePlayer != player.id ) {
-				socket.emit( 'shootResponse', { error: 'Not your turn.' } );
+				socket.emit( 'shootResponse', { error: 'not-your-turn' } );
 			} else {
-				const result = opponent.battlefield.shoot( position );
+				const response = opponent.battlefield.shoot( position );
 
-				this.activePlayer = result.type == 'hit' ? player.id : opponent.id;
-				result.activePlayer = this.activePlayer;
+				if ( response.type == 'missed' || response.type == 'notEmpty' ) {
+					this.activePlayer = opponent.id;
+				}
 
-				socket.emit( 'shootResponse', { response: result } );
-				socket.broadcast.to( this.id ).emit( 'shoot', result );
+				response.activePlayer = this.activePlayer;
+
+				socket.emit( 'shootResponse', { response } );
+				socket.broadcast.to( this.id ).emit( 'shoot', response );
 			}
 		} );
 	}

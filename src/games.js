@@ -7,8 +7,8 @@ class Games {
 	}
 
 	handleNewClient( socket ) {
-		socket.on( 'create', ( gameData ) => {
-			this._createGame( socket, gameData ).then( ( game ) => {
+		socket.on( 'create', ( gameSettings ) => {
+			this._createGame( socket, gameSettings ).then( ( game ) => {
 				const response = {
 					gameId: game.id,
 					playerId: game.player.id
@@ -23,7 +23,7 @@ class Games {
 			this._joinGame( socket, gameId )
 				.then( ( game ) => {
 					const response = {
-						gameData: game.gameData,
+						gameSettings: game.gameSettings,
 						playerId: socket.id,
 						opponentId: game.player.id,
 						isOpponentReady: game.player.isReady,
@@ -37,8 +37,8 @@ class Games {
 		} );
 	}
 
-	_createGame( socket, gameData ) {
-		const game  = new Game( this._io, gameData );
+	_createGame( socket, gameSettings ) {
+		const game  = new Game( this._io, gameSettings );
 
 		// Create game.
 		game.create( socket );
