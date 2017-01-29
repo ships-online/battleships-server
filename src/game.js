@@ -18,16 +18,14 @@ class Game {
 
 		this.set( 'activePlayer', null );
 
-		this.set( 'isStarted', false );
+		/**
+		 * @type {'available'|'battle'}
+		 */
+		this.set( 'status', 'available' );
 
 		this.player = new Player( new OpponentBattlefield( gameSettings.size, gameSettings.shipsSchema ) );
 
 		this.opponent = new Player( new OpponentBattlefield( gameSettings.size, gameSettings.shipsSchema ) );
-
-		this.bind( 'isStarted' )
-			.to( this.player, 'isReady', this.opponent, 'isReady', ( playerReady, opponentReady ) => {
-				return playerReady && opponentReady;
-			} );
 	}
 
 	create( socket ) {
@@ -35,7 +33,8 @@ class Game {
 
 		this._handlePlayerReady( this.player, this.opponent );
 
-		this.once( 'change:isStarted', () => {
+		Promise.all( [ this.player.waitForReady(), this.opponent.waitForReady() ] ).then( () => {
+			this.status = 'battle';
 			this.activePlayer = this.player.id;
 			this.io.sockets.in( this.id ).emit( 'started', { activePlayer: this.activePlayer } );
 		} );
@@ -43,8 +42,10 @@ class Game {
 
 	join( socket ) {
 		socket.on( 'accept', () => {
-			if ( this.isStarted ) {
-				socket.emit( 'acceptResponse', { error: 'not-available' } );
+			if ( this.opponent.isInGame ) {
+				socket.emit( 'acceptResponse', {
+					error: this.opponent.id == socket.id ? 'already-in-game' : 'not-available'
+				} );
 			} else {
 				this.opponent.socket = socket;
 
@@ -60,7 +61,15 @@ class Game {
 		const socket = player.socket;
 
 		socket.on( 'ready', ( ships ) => {
-			if ( player.battlefield.validateShips( ships ) ) {
+			if ( player.isReady ) {
+				return;
+			}
+
+			if ( !player.isInGame ) {
+				socket.emit( 'readyResponse', { error: 'player-not-in-game' } );
+			} else if ( !player.battlefield.validateShips( ships ) ) {
+				socket.emit( 'readyResponse', { error: 'invalid-ships-configuration' } );
+			} else {
 				player.battlefield.shipsCollection.add( ShipsCollection.createShipsFromJSON( ships ) );
 				player.isReady = true;
 
@@ -68,8 +77,6 @@ class Game {
 				socket.broadcast.to( this.id ).emit( 'ready' );
 
 				this._handlePlayerShoot( player, opponent );
-			} else {
-				socket.emit( 'playerReadyResponse', { error: 'Invalid ships configuration.' } );
 			}
 		} );
 	}
@@ -78,7 +85,9 @@ class Game {
 		const socket = player.socket;
 
 		socket.on( 'shoot', ( position ) => {
-			if ( this.activePlayer != player.id ) {
+			if ( this.status != 'battle' ) {
+				socket.emit( 'shootResponse', { error: 'invalid-game-status' } );
+			} if ( this.activePlayer != player.id ) {
 				socket.emit( 'shootResponse', { error: 'not-your-turn' } );
 			} else {
 				const response = opponent.battlefield.shoot( position );

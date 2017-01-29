@@ -56,7 +56,7 @@ class Games {
 		const game = this._games.get( gameId );
 
 		// When game is available.
-		if ( game && !game.isStarted ) {
+		if ( game && game.status == 'available' ) {
 			// Add client to the game.
 			game.join( socket );
 
@@ -83,7 +83,7 @@ class Games {
 	}
 
 	_handleClientLeft( game, clientId ) {
-		if ( game.isStarted && game.opponent.id == clientId ) {
+		if ( game.opponent.id == clientId && game.status == 'battle' ) {
 			this._io.sockets.in( game.id ).emit( 'gameOver' );
 		} else {
 			if ( game.opponent.id == clientId ) {
@@ -91,6 +91,7 @@ class Games {
 			}
 
 			this._io.sockets.in( game.id ).emit( 'left', {
+				opponentId: clientId,
 				interestedPlayers: this._getNumberOfPlayersInRoom( game.id ) - 1
 			} );
 		}

@@ -11,7 +11,15 @@ class Player {
 	}
 
 	get id() {
-		return this.socket ? this.socket.id : null;
+		return this.isInGame ? this.socket.id : null;
+	}
+
+	get isInGame() {
+		return !!this.socket;
+	}
+
+	waitForReady() {
+		return new Promise( resolve => this.once( 'change:isReady', resolve ) );
 	}
 }
 
