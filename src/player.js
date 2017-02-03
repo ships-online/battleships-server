@@ -8,6 +8,8 @@ class Player {
 		this.socket = null;
 
 		this.set( 'isReady', false );
+
+		this.set( 'rematchRequested', false );
 	}
 
 	get id() {
@@ -20,6 +22,16 @@ class Player {
 
 	waitForReady() {
 		return new Promise( resolve => this.once( 'change:isReady', resolve ) );
+	}
+
+	waitForRematch() {
+		return new Promise( resolve => this.once( 'change:rematchRequested', resolve ) );
+	}
+
+	reset() {
+		this.battlefield.clear();
+		this.isReady = false;
+		this.rematchRequested = false;
 	}
 }
 

@@ -18,9 +18,6 @@ class Game {
 
 		this.set( 'activePlayer', null );
 
-		/**
-		 * @type {'available'|'battle'}
-		 */
 		this.set( 'status', 'available' );
 
 		this.player = new Player( new OpponentBattlefield( gameSettings.size, gameSettings.shipsSchema ) );
@@ -32,32 +29,32 @@ class Game {
 		this.player.socket = socket;
 
 		this._handlePlayerReady( this.player, this.opponent );
-
-		Promise.all( [ this.player.waitForReady(), this.opponent.waitForReady() ] ).then( () => {
-			this.status = 'battle';
-			this.activePlayer = this.player.id;
-			this.io.sockets.in( this.id ).emit( 'started', { activePlayer: this.activePlayer } );
-		} );
+		this._handlePlayerShoot( this.player, this.opponent );
+		this._handleRematchRequest( this.player );
+		this._handleGameStart();
 	}
 
 	join( socket ) {
-		socket.on( 'accept', () => {
-			if ( this.opponent.isInGame ) {
+		socket.on( 'accept', () =>  {
+			if ( this.status != 'available' ) {
 				socket.emit( 'acceptResponse', {
 					error: this.opponent.id == socket.id ? 'already-in-game' : 'not-available'
 				} );
 			} else {
 				this.opponent.socket = socket;
+				this.status = 'full';
 
 				socket.emit( 'acceptResponse' );
 				socket.broadcast.to( this.id ).emit( 'accepted', { id: this.opponent.id } );
 
 				this._handlePlayerReady( this.opponent, this.player );
+				this._handlePlayerShoot( this.opponent, this.player );
+				this._handleRematchRequest( this.opponent );
 			}
 		} );
 	}
 
-	_handlePlayerReady( player, opponent ) {
+	_handlePlayerReady( player ) {
 		const socket = player.socket;
 
 		socket.on( 'ready', ( ships ) => {
@@ -75,9 +72,37 @@ class Game {
 
 				socket.emit( 'readyResponse' );
 				socket.broadcast.to( this.id ).emit( 'ready' );
-
-				this._handlePlayerShoot( player, opponent );
 			}
+		} );
+	}
+
+	_handleGameStart() {
+		Promise.all( [ this.player.waitForReady(), this.opponent.waitForReady() ] ).then( () => {
+			this.status = 'battle';
+			this.activePlayer = this.player.id;
+			this.io.sockets.in( this.id ).emit( 'started', { activePlayer: this.activePlayer } );
+		} );
+	}
+
+	_handleRematch() {
+		Promise.all( [ this.player.waitForRematch(), this.opponent.waitForRematch() ] ).then( () => {
+			this.player.reset();
+			this.opponent.reset();
+			this.activePlayer = null;
+			this.status = 'full';
+			this.io.sockets.in( this.id ).emit( 'rematch' );
+
+			this._handleGameStart();
+		} );
+	}
+
+	_handleRematchRequest( player ) {
+		const socket = player.socket;
+
+		socket.on( 'rematch', () => {
+			socket.emit( 'rematchResponse' );
+			player.rematchRequested = true;
+			this.io.sockets.in( this.id ).emit( 'rematchRequested', { playerId: player.id } );
 		} );
 	}
 
@@ -94,6 +119,14 @@ class Game {
 
 				if ( response.type == 'missed' || response.type == 'notEmpty' ) {
 					this.activePlayer = opponent.id;
+				} else {
+					if ( response.sunk ) {
+						if ( Array.from( opponent.battlefield.shipsCollection ).every( ship => ship.isSunk ) ) {
+							response.winner = player.id;
+
+							this._handleRematch();
+						}
+					}
 				}
 
 				response.activePlayer = this.activePlayer;
@@ -105,6 +138,17 @@ class Game {
 	}
 
 	destroy() {
+		const room = this.io.sockets.adapter.rooms[ this.id ];
+
+		if ( room ) {
+			const socketsInRoom = Object.keys( this.io.sockets.adapter.rooms[ this.id ].sockets );
+
+			for ( const socketId of socketsInRoom ) {
+				this.io.sockets.connected[ socketId ].disconnect();
+			}
+		}
+
+		this.stopListening();
 	}
 }
 

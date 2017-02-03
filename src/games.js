@@ -77,17 +77,20 @@ class Games {
 	}
 
 	_handleHostLeft( game ) {
-		this._io.sockets.in( game.id ).emit( 'gameOver' );
-		this._games.delete( game.id );
+		this._io.sockets.in( game.id ).emit( 'gameOver', 'host-left' );
 		game.destroy();
+		this._games.delete( game.id );
 	}
 
 	_handleClientLeft( game, clientId ) {
 		if ( game.opponent.id == clientId && game.status == 'battle' ) {
-			this._io.sockets.in( game.id ).emit( 'gameOver' );
+			this._io.sockets.in( game.id ).emit( 'gameOver', 'opponent-left' );
+			game.destroy();
+			this._games.delete( game.id );
 		} else {
 			if ( game.opponent.id == clientId ) {
 				game.opponent.socket = null;
+				game.status = 'available';
 			}
 
 			this._io.sockets.in( game.id ).emit( 'left', {
