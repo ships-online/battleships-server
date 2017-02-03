@@ -5,55 +5,102 @@ const OpponentBattlefield = require( '../lib/battleships-engine/src/opponentbatt
 const ShipsCollection = require( '../lib/battleships-engine/src/shipscollection.js' ).default;
 const ObservableMixin = require( '../lib/@ckeditor/ckeditor5-utils/src/observablemixin.js' ).default;
 const mix = require( '../lib/@ckeditor/ckeditor5-utils/src/mix.js' ).default;
-
 const shortId = require( 'shortid' );
 
+/**
+ * Game class.
+ */
 class Game {
+	/**
+	 * @param {socket.io} io Socket.io
+	 * @param {Object} gameSettings Game settings.
+	 * @param {Number} [gameSettings.size] Size of the battlefield - how many fields long height will be.
+	 * @param {Object} [gameSettings.shipsSchema] Schema with ships allowed on the battlefield.
+	 */
 	constructor( io, gameSettings ) {
-		this.io = io;
+		/**
+		 * Socket.io object.
+		 *
+		 * @private
+		 * @type {socket.io}
+		 */
+		this._io = io;
 
+		/**
+		 * Game id.
+		 *
+		 * @type {String}
+		 */
 		this.id = shortId.generate();
 
+		/**
+		 * Game settings.
+		 *
+		 * @type {Object}
+		 */
 		this.gameSettings = gameSettings;
 
+		/**
+		 * Id of active player.
+		 *
+		 * @observable
+		 * @type {String}
+		 */
 		this.set( 'activePlayer', null );
 
+		/**
+		 * Game status.
+		 *
+		 * @observable
+		 * @type {'available'|'full'|'battle'|'over'}
+		 */
 		this.set( 'status', 'available' );
 
+		/**
+		 * Player (host) instance.
+		 *
+		 * @type {Player}
+		 */
 		this.player = new Player( new OpponentBattlefield( gameSettings.size, gameSettings.shipsSchema ) );
 
+		/**
+		 * Opponent (client) instance.
+		 *
+		 * @type {Player}
+		 */
 		this.opponent = new Player( new OpponentBattlefield( gameSettings.size, gameSettings.shipsSchema ) );
 	}
 
+	/**
+	 * @param {socket} socket Host socket.
+	 */
 	create( socket ) {
 		this.player.socket = socket;
 
-		this._handlePlayerReady( this.player, this.opponent );
-		this._handlePlayerShoot( this.player, this.opponent );
-		this._handleRematchRequest( this.player );
 		this._handleGameStart();
+		this._handlePlayerReady( this.player );
+		this._handlePlayerShoot( this.player, this.opponent );
+		this._handlePlayerRematchRequest( this.player );
 	}
 
+	/**
+	 * @param {socket} socket Client socket.
+	 */
 	join( socket ) {
-		socket.on( 'accept', () =>  {
-			if ( this.status != 'available' ) {
-				socket.emit( 'acceptResponse', {
-					error: this.opponent.id == socket.id ? 'already-in-game' : 'not-available'
-				} );
-			} else {
-				this.opponent.socket = socket;
-				this.status = 'full';
+		this.opponent.socket = socket;
+		this.status = 'full';
 
-				socket.emit( 'acceptResponse' );
-				socket.broadcast.to( this.id ).emit( 'accepted', { id: this.opponent.id } );
-
-				this._handlePlayerReady( this.opponent, this.player );
-				this._handlePlayerShoot( this.opponent, this.player );
-				this._handleRematchRequest( this.opponent );
-			}
-		} );
+		this._handlePlayerReady( this.opponent );
+		this._handlePlayerShoot( this.opponent, this.player );
+		this._handlePlayerRematchRequest( this.opponent );
 	}
 
+	/**
+	 * Handles player is ready and validates current game and players status.
+	 *
+	 * @private
+	 * @param {Player} player Player instance.
+	 */
 	_handlePlayerReady( player ) {
 		const socket = player.socket;
 
@@ -76,36 +123,26 @@ class Game {
 		} );
 	}
 
+	/**
+	 * Handles both `#player` and `#opponent` are ready ans starts the battle.
+	 *
+	 * @private
+	 */
 	_handleGameStart() {
 		Promise.all( [ this.player.waitForReady(), this.opponent.waitForReady() ] ).then( () => {
 			this.status = 'battle';
 			this.activePlayer = this.player.id;
-			this.io.sockets.in( this.id ).emit( 'started', { activePlayer: this.activePlayer } );
+			this._io.sockets.in( this.id ).emit( 'started', { activePlayer: this.activePlayer } );
 		} );
 	}
 
-	_handleRematch() {
-		Promise.all( [ this.player.waitForRematch(), this.opponent.waitForRematch() ] ).then( () => {
-			this.player.reset();
-			this.opponent.reset();
-			this.activePlayer = null;
-			this.status = 'full';
-			this.io.sockets.in( this.id ).emit( 'rematch' );
-
-			this._handleGameStart();
-		} );
-	}
-
-	_handleRematchRequest( player ) {
-		const socket = player.socket;
-
-		socket.on( 'rematch', () => {
-			socket.emit( 'rematchResponse' );
-			player.rematchRequested = true;
-			this.io.sockets.in( this.id ).emit( 'rematchRequested', { playerId: player.id } );
-		} );
-	}
-
+	/**
+	 * Handles player shoot and validates influence on the current game.
+	 *
+	 * @private
+	 * @param {Player} player Player instance.
+	 * @param {Player} opponent Opponent instance.
+	 */
 	_handlePlayerShoot( player, opponent ) {
 		const socket = player.socket;
 
@@ -113,7 +150,7 @@ class Game {
 			if ( this.status != 'battle' ) {
 				socket.emit( 'shootResponse', { error: 'invalid-game-status' } );
 			} if ( this.activePlayer != player.id ) {
-				socket.emit( 'shootResponse', { error: 'not-your-turn' } );
+				socket.emit( 'shootResponse', { error: 'not-this-player-turn' } );
 			} else {
 				const response = opponent.battlefield.shoot( position );
 
@@ -137,14 +174,50 @@ class Game {
 		} );
 	}
 
+	/**
+	 * Handles player request rematch after battle.
+	 *
+	 * @private
+	 * @param {Player} player Player instance.
+	 */
+	_handlePlayerRematchRequest( player ) {
+		const socket = player.socket;
+
+		socket.on( 'rematch', () => {
+			socket.emit( 'rematchResponse' );
+			player.rematchRequested = true;
+			this._io.sockets.in( this.id ).emit( 'rematchRequested', { playerId: player.id } );
+		} );
+	}
+
+	/**
+	 * Handles both players requested rematch after battle.
+	 *
+	 * @private
+	 */
+	_handleRematch() {
+		Promise.all( [ this.player.waitForRematch(), this.opponent.waitForRematch() ] ).then( () => {
+			this.player.reset();
+			this.opponent.reset();
+			this.activePlayer = null;
+			this.status = 'full';
+			this._io.sockets.in( this.id ).emit( 'rematch' );
+
+			this._handleGameStart();
+		} );
+	}
+
+	/**
+	 * Destroy the game instance, destroy sockets, detach listeners.
+	 */
 	destroy() {
-		const room = this.io.sockets.adapter.rooms[ this.id ];
+		const room = this._io.sockets.adapter.rooms[ this.id ];
 
 		if ( room ) {
-			const socketsInRoom = Object.keys( this.io.sockets.adapter.rooms[ this.id ].sockets );
+			const socketsInRoom = Object.keys( this._io.sockets.adapter.rooms[ this.id ].sockets );
 
 			for ( const socketId of socketsInRoom ) {
-				this.io.sockets.connected[ socketId ].disconnect();
+				this._io.sockets.connected[ socketId ].disconnect();
 			}
 		}
 

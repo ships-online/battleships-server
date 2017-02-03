@@ -2,7 +2,7 @@
 
 /* eslint no-console: 0 */
 
-const port = 8080;
+const port = process.env.PORT || 8080;
 
 const io = require( 'socket.io' )( port );
 const Games = require( './src/games.js' );
