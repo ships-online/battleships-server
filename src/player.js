@@ -72,7 +72,7 @@ class Player {
 	 * Resets all player data.
 	 */
 	reset() {
-		this.battlefield.clear();
+		this.battlefield.reset();
 		this.isReady = false;
 		this.rematchRequested = false;
 	}

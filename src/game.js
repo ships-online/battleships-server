@@ -118,7 +118,7 @@ class Game {
 				player.isReady = true;
 
 				socket.emit( 'readyResponse' );
-				socket.broadcast.to( this.id ).emit( 'ready' );
+				socket.broadcast.to( this.id ).emit( 'playerReady' );
 			}
 		} );
 	}
@@ -132,7 +132,7 @@ class Game {
 		Promise.all( [ this.player.waitForReady(), this.opponent.waitForReady() ] ).then( () => {
 			this.status = 'battle';
 			this.activePlayer = this.player.id;
-			this._io.sockets.in( this.id ).emit( 'started', { activePlayer: this.activePlayer } );
+			this._io.sockets.in( this.id ).emit( 'battleStarted', { activePlayer: this.activePlayer } );
 		} );
 	}
 
@@ -150,7 +150,7 @@ class Game {
 			if ( this.status != 'battle' ) {
 				socket.emit( 'shootResponse', { error: 'invalid-game-status' } );
 			} if ( this.activePlayer != player.id ) {
-				socket.emit( 'shootResponse', { error: 'not-this-player-turn' } );
+				socket.emit( 'shootResponse', { error: 'invalid-turn' } );
 			} else {
 				const response = opponent.battlefield.shoot( position );
 
@@ -169,7 +169,7 @@ class Game {
 				response.activePlayer = this.activePlayer;
 
 				socket.emit( 'shootResponse', { response } );
-				socket.broadcast.to( this.id ).emit( 'shoot', response );
+				socket.broadcast.to( this.id ).emit( 'playerShoot', response );
 			}
 		} );
 	}
@@ -183,10 +183,10 @@ class Game {
 	_handlePlayerRematchRequest( player ) {
 		const socket = player.socket;
 
-		socket.on( 'rematch', () => {
-			socket.emit( 'rematchResponse' );
+		socket.on( 'requestRematch', () => {
+			socket.emit( 'requestRematchResponse' );
 			player.rematchRequested = true;
-			this._io.sockets.in( this.id ).emit( 'rematchRequested', { playerId: player.id } );
+			this._io.sockets.in( this.id ).emit( 'playerRequestRematch', { playerId: player.id } );
 		} );
 	}
 

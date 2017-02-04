@@ -60,7 +60,7 @@ class Games {
 							playerId: socket.id,
 							opponentId: game.player.id,
 							isOpponentReady: game.player.isReady,
-							interestedPlayers: this._getNumberOfPlayersInRoom( game.id ) - 1
+							interestedPlayersNumber: this._getNumberOfPlayersInRoom( game.id ) - 1
 						}
 					} );
 
@@ -108,9 +108,9 @@ class Games {
 			// Add client socket to the game room.
 			socket.join( game.id );
 
-			// Let know the rest players in the room that new socket joined.
-			socket.broadcast.to( game.id ).emit( 'joined', {
-				interestedPlayers: this._getNumberOfPlayersInRoom( game.id ) - 1
+			// Let know other players in the room that new socket joined.
+			socket.broadcast.to( game.id ).emit( 'interestedPlayerJoined', {
+				interestedPlayersNumber: this._getNumberOfPlayersInRoom( game.id ) - 1
 			} );
 
 			// Wait until client accept the game.
@@ -121,7 +121,7 @@ class Games {
 					// and inform rest of the sockets in room then opponent accepts the game.
 					game.join( socket );
 					socket.emit( 'acceptResponse' );
-					socket.broadcast.to( game.id ).emit( 'accepted', { id: game.opponent.id } );
+					socket.broadcast.to( game.id ).emit( 'interestedPlayerAccepted', { id: game.opponent.id } );
 				// Otherwise sends information that game is not available.
 				} else {
 					socket.emit( 'acceptResponse', {
@@ -169,9 +169,9 @@ class Games {
 			}
 
 			// Send information for the rest of the players that client left the game.
-			this._io.sockets.in( game.id ).emit( 'left', {
+			this._io.sockets.in( game.id ).emit( 'playerLeft', {
 				opponentId: clientId,
-				interestedPlayers: this._getNumberOfPlayersInRoom( game.id ) - 1
+				interestedPlayersNumber: this._getNumberOfPlayersInRoom( game.id ) - 1
 			} );
 		}
 	}
