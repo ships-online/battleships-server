@@ -33,6 +33,12 @@ class Player {
 		 */
 		this.set( 'isReady', false );
 
+		/**
+		 * Defines if player requested rematch and waits for it.
+		 *
+		 * @observable
+		 * @type {Boolean}
+		 */
 		this.set( 'rematchRequested', false );
 	}
 
@@ -69,7 +75,7 @@ class Player {
 	}
 
 	/**
-	 * Resets all player data.
+	 * Reset player data to default values.
 	 */
 	reset() {
 		this.battlefield.reset();
