@@ -1,3 +1,5 @@
+'use strict';
+
 const ObservableMixin = require( '../lib/@ckeditor/ckeditor5-utils/src/observablemixin.js' ).default;
 const mix = require( '../lib/@ckeditor/ckeditor5-utils/src/mix.js' ).default;
 
