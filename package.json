@@ -1,7 +1,7 @@
 {
   "name": "battleships-server",
   "version": "0.0.1",
-  "description": "The server of Battleships game.",
+  "description": "The socket server of Battleships game.",
   "main": "index.js",
   "scripts": {
     "lint": "./node_modules/.bin/gulp lint",
@@ -11,16 +11,20 @@
     "battleships",
     "game"
   ],
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:ships-online/battleships-server.git"
+  },
   "author": "Oskar Wróbel <kontakt@oskarwrobel.pl>",
   "license": "ISC",
   "devDependencies": {
     "gulp": "^3.9.1",
     "guppy-pre-commit": "^0.4.0",
-    "battleships-dev-tools": "../battleships-dev-tools"
+    "battleships-dev-tools": "git@github.com:ships-online/battleships-dev-tools.git"
   },
   "dependencies": {
     "@ckeditor/ckeditor5-utils": "^0.6.0",
-    "battleships-engine": "../battleships-engine",
+    "battleships-engine": "git@github.com:ships-online/battleships-engine.git",
     "shortid": "^2.2.6",
     "socket.io": "^1.5.0"
   }
