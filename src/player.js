@@ -5,6 +5,7 @@ const mix = require( '../lib/@ckeditor/ckeditor5-utils/src/mix.js' ).default;
  * Player class.
  *
  * Represents single player in the game.
+ * @mixes ObservableMixin
  */
 class Player {
 	/**
@@ -57,7 +58,7 @@ class Player {
 	}
 
 	/**
-	 * Wait until player will be ready.
+	 * Waits until player will be ready.
 	 *
 	 * @returns {Promise} Promise which will be resolved when player will be ready.
 	 */
@@ -66,7 +67,7 @@ class Player {
 	}
 
 	/**
-	 * Wait until player will request rematch.
+	 * Waits until player will request rematch.
 	 *
 	 * @returns {Promise} Promise which will be resolved when player will request rematch.
 	 */
@@ -75,7 +76,7 @@ class Player {
 	}
 
 	/**
-	 * Reset player data to default values.
+	 * Resets player data to default values.
 	 */
 	reset() {
 		this.battlefield.reset();

@@ -1,8 +1,6 @@
 const Game = require( './game.js' );
 
 /**
- * Games class.
- *
  * Class for games manging.
  */
 class Games {
@@ -32,9 +30,9 @@ class Games {
 	 */
 	handleNewClient( socket ) {
 		// When socket sends `create` event.
-		socket.on( 'create', ( gameSettings ) => {
+		socket.on( 'create', ( settings ) => {
 			// Then create new game.
-			this._createGame( socket, gameSettings ).then( ( game ) => {
+			this._createGame( socket, settings ).then( ( game ) => {
 				// Sends back information about created game.
 				socket.emit( 'createResponse', {
 					response: {
@@ -56,7 +54,7 @@ class Games {
 					// Sends back information about game.
 					socket.emit( 'joinResponse', {
 						response: {
-							gameSettings: game.gameSettings,
+							settings: game.settings,
 							playerId: socket.id,
 							opponentId: game.player.id,
 							isOpponentReady: game.player.isReady,
@@ -74,13 +72,13 @@ class Games {
 	/**
 	 * @private
 	 * @param {socket} socket Host socket.
-	 * @param {Object} gameSettings Game settings.
-	 * @param {Number} [gameSettings.size] Size of the battlefield - how many fields long height will be.
-	 * @param {Object} [gameSettings.shipsSchema] Schema with ships allowed on the battlefield.
+	 * @param {Object} settings Game settings.
+	 * @param {Number} [settings.size] Size of the battlefield - how many fields long height will be.
+	 * @param {Object} [settings.shipsSchema] Schema with ships allowed on the battlefield.
 	 * @returns {Promise.<Game>} Promise that return game instance when resolved.
 	 */
-	_createGame( socket, gameSettings ) {
-		const game  = new Game( this._io, gameSettings );
+	_createGame( socket, settings ) {
+		const game  = new Game( this._io, settings );
 
 		// Create game.
 		game.create( socket );

@@ -9,15 +9,17 @@ const shortId = require( 'shortid' );
 
 /**
  * Game class.
+ *
+ * @mixes ObservableMixin
  */
 class Game {
 	/**
 	 * @param {socket.io} io Socket.io
-	 * @param {Object} gameSettings Game settings.
-	 * @param {Number} [gameSettings.size] Size of the battlefield - how many fields long height will be.
-	 * @param {Object} [gameSettings.shipsSchema] Schema with ships allowed on the battlefield.
+	 * @param {Object} settings Game settings.
+	 * @param {Number} [settings.size] Size of the battlefield - how many fields long height will be.
+	 * @param {Object} [settings.shipsSchema] Schema with ships allowed on the battlefield.
 	 */
-	constructor( io, gameSettings ) {
+	constructor( io, settings ) {
 		/**
 		 * Socket.io object.
 		 *
@@ -38,7 +40,7 @@ class Game {
 		 *
 		 * @type {Object}
 		 */
-		this.gameSettings = gameSettings;
+		this.settings = settings;
 
 		/**
 		 * Id of active player.
@@ -61,14 +63,14 @@ class Game {
 		 *
 		 * @type {Player}
 		 */
-		this.player = new Player( new OpponentBattlefield( gameSettings.size, gameSettings.shipsSchema ) );
+		this.player = new Player( new OpponentBattlefield( settings.size, settings.shipsSchema ) );
 
 		/**
 		 * Opponent (client) instance.
 		 *
 		 * @type {Player}
 		 */
-		this.opponent = new Player( new OpponentBattlefield( gameSettings.size, gameSettings.shipsSchema ) );
+		this.opponent = new Player( new OpponentBattlefield( settings.size, settings.shipsSchema ) );
 	}
 
 	/**
@@ -208,7 +210,7 @@ class Game {
 	}
 
 	/**
-	 * Destroy the game instance, destroy sockets, detach listeners.
+	 * Destroys the game instance, destroy sockets, detach listeners.
 	 */
 	destroy() {
 		const room = this._io.sockets.adapter.rooms[ this.id ];
