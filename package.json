@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "lint": "./node_modules/.bin/gulp lint",
-    "test": "./node_modules/.bin/gulp test",
+    "test": "./node_modules/.bin/gulp test -c",
     "build": "./node_modules/.bin/gulp battleships:build"
   },
   "keywords": [

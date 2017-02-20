@@ -19,3 +19,6 @@ install:
   - npm run build
 script:
   - npm test
+after_success:
+  - npm install -g codeclimate-test-reporter
+  - codeclimate-test-reporter < coverage/lcov.info
