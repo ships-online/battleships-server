@@ -17,7 +17,7 @@ const options = utils.parseArgs( process.argv.slice( 3 ) );
 
 gulp.task( 'relink', linkTask.relink );
 
-// build engine and utils to commonjs format.
+// Build engine and utils to commonjs format.
 gulp.task( 'clean:build:engine', () => utils.del( path.join( '.', 'lib', 'battleships-engine' ) ) );
 gulp.task( 'clean:build:utils', () => utils.del( path.join( '.', 'lib', '@ckeditor' ) ) );
 
