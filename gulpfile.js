@@ -22,11 +22,14 @@ gulp.task( 'clean:build:engine', () => utils.del( path.join( '.', 'lib', 'battle
 gulp.task( 'clean:build:utils', () => utils.del( path.join( '.', 'lib', '@ckeditor' ) ) );
 
 gulp.task( 'build:engine', [ 'clean:build:engine' ], () => {
-	return compileTasks.buildDependency( 'engine', {
-		destination: path.join( '.', 'lib', 'battleships-engine' ),
-		relativeTo: '../../',
-		format: 'cjs'
-	} );
+	return compileTasks.build(
+		path.join( '.', 'node_modules', 'battleships-engine' ),
+		path.join( '.', 'lib', 'battleships-engine' ),
+		{
+			relativeTo: '../../',
+			format: 'cjs'
+		}
+	);
 } );
 
 gulp.task( 'build:utils', [ 'clean:build:utils' ], () => {
@@ -38,7 +41,7 @@ gulp.task( 'build:utils', [ 'clean:build:utils' ], () => {
 		}
 	);
 } );
-gulp.task( 'battleships:build', [ 'build:engine', 'build:utils' ], ( done ) => done() );
+gulp.task( 'build:battleships', [ 'build:engine', 'build:utils' ], ( done ) => done() );
 
 gulp.task( 'test', () => testTasks.testNode( options ) );
 
