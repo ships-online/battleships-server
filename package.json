@@ -6,7 +6,7 @@
   "scripts": {
     "lint": "./node_modules/.bin/gulp lint",
     "test": "./node_modules/.bin/gulp test -c",
-    "build": "./node_modules/.bin/gulp battleships:build"
+    "build": "./node_modules/.bin/gulp build:battleships"
   },
   "keywords": [
     "battleships",
