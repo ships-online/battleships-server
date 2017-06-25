@@ -5,7 +5,7 @@ cache:
   - node_modules
 install:
   - npm install
-  - npm run build
+  - npm run compile
 script:
   - npm run lint
   - npm test
