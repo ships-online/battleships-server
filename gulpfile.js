@@ -8,21 +8,18 @@ const path = require( 'path' );
 const gulp = require( 'gulp' );
 
 const utils = require( 'battleships-dev-tools/lib/utils.js' );
-const linkTask = require( 'battleships-dev-tools/lib/tasks/relink.js' )( config );
 const lintTasks = require( 'battleships-dev-tools/lib/tasks/lint.js' )( config );
 const compileTasks = require( 'battleships-dev-tools/lib/tasks/compile.js' )( config );
 const testTasks = require( 'battleships-dev-tools/lib/tasks/test.js' )( config );
 
 const options = utils.parseArgs( process.argv.slice( 3 ) );
 
-gulp.task( 'relink', linkTask.relink );
-
 // Build engine and utils to commonjs format.
-gulp.task( 'clean:build:engine', () => utils.del( path.join( '.', 'lib', 'battleships-engine' ) ) );
-gulp.task( 'clean:build:utils', () => utils.del( path.join( '.', 'lib', '@ckeditor' ) ) );
+gulp.task( 'clean:engine', () => utils.del( path.join( '.', 'lib', 'battleships-engine' ) ) );
+gulp.task( 'clean:utils', () => utils.del( path.join( '.', 'lib', '@ckeditor' ) ) );
 
-gulp.task( 'build:engine', [ 'clean:build:engine' ], () => {
-	return compileTasks.build(
+gulp.task( 'build:engine', [ 'clean:engine' ], () => {
+	return compileTasks.compile(
 		path.join( '.', 'node_modules', 'battleships-engine' ),
 		path.join( '.', 'lib', 'battleships-engine' ),
 		{
@@ -32,8 +29,8 @@ gulp.task( 'build:engine', [ 'clean:build:engine' ], () => {
 	);
 } );
 
-gulp.task( 'build:utils', [ 'clean:build:utils' ], () => {
-	return compileTasks.build(
+gulp.task( 'build:utils', [ 'clean:utils' ], () => {
+	return compileTasks.compile(
 		path.join( '.', 'node_modules', '@ckeditor', 'ckeditor5-utils' ),
 		path.join( '.', 'lib', '@ckeditor', 'ckeditor5-utils' ),
 		{
