@@ -34,18 +34,18 @@ class Games {
 		// When socket sends `create` event.
 		socket.on( 'create', ( settings ) => {
 			// Then create new game.
-			this._createGame( socket, settings ).then( ( game ) => {
-				// Sends back information about created game.
-				socket.emit( 'createResponse', {
-					response: {
-						gameId: game.id,
-						playerId: game.player.id
-					}
-				} );
+			const game = this._createGame( socket, settings );
 
-				// And start to listen on socket disconnect.
-				socket.on( 'disconnect', () => this._handleHostLeft( game ) );
+			// Sends back information about created game.
+			socket.emit( 'createResponse', {
+				response: {
+					gameId: game.id,
+					playerId: game.player.id
+				}
 			} );
+
+			// And start to listen on socket disconnect.
+			socket.on( 'disconnect', () => this._handleHostLeft( game ) );
 		}  );
 
 		// When socket sends `join` event.
@@ -77,7 +77,7 @@ class Games {
 	 * @param {Object} settings Game settings.
 	 * @param {Number} [settings.size] Size of the battlefield - how many fields long height will be.
 	 * @param {Object} [settings.shipsSchema] Schema with ships allowed on the battlefield.
-	 * @returns {Promise.<Game>} Promise that return game instance when resolved.
+	 * @returns {Game} Game instance.
 	 */
 	_createGame( socket, settings ) {
 		const game  = new Game( this._io, settings );
@@ -91,7 +91,7 @@ class Games {
 		// Store game.
 		this._games.set( game.id, game );
 
-		return Promise.resolve( game );
+		return game;
 	}
 
 	/**
@@ -117,8 +117,8 @@ class Games {
 			socket.on( 'accept', () => {
 				// When game is still available.
 				if ( game.status == 'available' ) {
-					// Then all socket to the game
-					// and inform rest of the sockets in room then opponent accepts the game.
+					// Then add socket to the game
+					// and inform rest of the clients in room that opponent accepts the game.
 					game.join( socket );
 					socket.emit( 'acceptResponse' );
 					socket.broadcast.to( game.id ).emit( 'interestedPlayerAccepted', { id: game.opponent.id } );
