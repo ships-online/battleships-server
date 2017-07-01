@@ -156,7 +156,7 @@ class Game {
 			} else {
 				const response = opponent.battlefield.shoot( position );
 
-				if ( response.type == 'missed' || response.type == 'notEmpty' ) {
+				if ( response.type == 'missed' || response.notEmpty ) {
 					this.activePlayer = opponent.id;
 				} else {
 					if ( response.sunk ) {
