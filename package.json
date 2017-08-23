@@ -4,6 +4,7 @@
   "description": "The socket server of Battleships game.",
   "main": "index.js",
   "scripts": {
+    "start": "node server.js",
     "lint": "./node_modules/.bin/gulp lint",
     "test": "./node_modules/.bin/gulp test -c",
     "compile": "./node_modules/.bin/gulp compile"
