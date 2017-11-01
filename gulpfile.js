@@ -35,7 +35,7 @@ gulp.task( 'compile:utils', [ 'clean:utils' ], () => {
 		}
 	);
 } );
-gulp.task( 'compile', [ 'compile:engine', 'compile:utils' ], ( done ) => done() );
+gulp.task( 'compile', [ 'compile:engine', 'compile:utils' ], done => done() );
 
 gulp.task( 'lint', lintTasks.lint );
 gulp.task( 'pre-commit', lintTasks.lintStaged );

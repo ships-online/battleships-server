@@ -45,7 +45,7 @@ describe( 'Player', () => {
 	} );
 
 	describe( 'waitForReady()', () => {
-		it( 'should return promise which resolve when player will be ready', ( done ) => {
+		it( 'should return promise which resolve when player will be ready', done => {
 			player.waitForReady().then( () => {
 				expect( player.isReady ).to.true;
 				done();
@@ -56,7 +56,7 @@ describe( 'Player', () => {
 	} );
 
 	describe( 'waitForRematch()', () => {
-		it( 'should return promise which resolve when player will request rematch', ( done ) => {
+		it( 'should return promise which resolve when player will request rematch', done => {
 			player.waitForRematch().then( () => {
 				expect( player.rematchRequested ).to.true;
 				done();

@@ -24,6 +24,7 @@
     "battleships-dev-tools": "https://github.com/ships-online/battleships-dev-tools.git",
     "gulp": "^3.9.1",
     "husky": "^0.14.3",
+    "lint-staged": "^4.3.0",
     "mocha": "^4.0.1",
     "nyc": "^11.2.1"
   },

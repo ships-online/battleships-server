@@ -106,7 +106,7 @@ class Game {
 	_handlePlayerReady( player ) {
 		const socket = player.socket;
 
-		socket.on( 'ready', ( ships ) => {
+		socket.on( 'ready', ships => {
 			if ( player.isReady ) {
 				return;
 			}
@@ -148,10 +148,10 @@ class Game {
 	_handlePlayerShoot( player, opponent ) {
 		const socket = player.socket;
 
-		socket.on( 'shoot', ( position ) => {
+		socket.on( 'shoot', position => {
 			if ( this.status != 'battle' ) {
 				socket.emit( 'shootResponse', { error: 'invalid-game-status' } );
-			} if ( this.activePlayer != player.id ) {
+			} else if ( this.activePlayer != player.id ) {
 				socket.emit( 'shootResponse', { error: 'invalid-turn' } );
 			} else {
 				const response = opponent.battlefield.shoot( position );

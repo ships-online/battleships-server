@@ -32,7 +32,7 @@ class Games {
 	 */
 	handleNewClient( socket ) {
 		// When socket sends `create` event.
-		socket.on( 'create', ( settings ) => {
+		socket.on( 'create', settings => {
 			// Then create new game.
 			const game = this._createGame( socket, settings );
 
@@ -46,13 +46,13 @@ class Games {
 
 			// And start to listen on socket disconnect.
 			socket.on( 'disconnect', () => this._handleHostLeft( game ) );
-		}  );
+		} );
 
 		// When socket sends `join` event.
-		socket.on( 'join', ( gameId ) => {
+		socket.on( 'join', gameId => {
 			// Then join socket to the game.
 			this._joinGame( socket, gameId )
-				.then( ( game ) => {
+				.then( game => {
 					// Sends back information about game.
 					socket.emit( 'joinResponse', {
 						response: {
@@ -80,7 +80,7 @@ class Games {
 	 * @returns {Game} Game instance.
 	 */
 	_createGame( socket, settings ) {
-		const game  = new Game( this._io, settings );
+		const game = new Game( this._io, settings );
 
 		// Create game.
 		game.create( socket );
