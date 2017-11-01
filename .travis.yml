@@ -1,6 +1,6 @@
 language: node_js
 node_js:
-  - "6"
+  - "8"
 cache:
   - node_modules
 install:
@@ -8,7 +8,7 @@ install:
   - npm run compile
 script:
   - npm run lint
-  - npm test
+  - npm test -- tests
 after_success:
   - npm install -g codeclimate-test-reporter
   - codeclimate-test-reporter < coverage/lcov.info
