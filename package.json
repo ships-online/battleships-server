@@ -5,9 +5,10 @@
   "main": "index.js",
   "scripts": {
     "start": "node server.js",
-    "lint": "gulp lint",
+    "compile": "gulp compile",
     "test": "nyc --all mocha",
-    "compile": "gulp compile"
+    "lint": "eslint --quiet '**/*.js'",
+    "precommit": "lint-staged"
   },
   "keywords": [
     "battleships",
@@ -22,7 +23,7 @@
   "devDependencies": {
     "battleships-dev-tools": "https://github.com/ships-online/battleships-dev-tools.git",
     "gulp": "^3.9.1",
-    "guppy-pre-commit": "^0.4.0",
+    "husky": "^0.14.3",
     "mocha": "^4.0.1",
     "nyc": "^11.2.1"
   },
@@ -39,5 +40,14 @@
     "include": [
       "src"
     ]
-  }
+  },
+  "lint-staged": {
+    "**/*.js": [
+      "eslint --quiet"
+    ]
+  },
+  "eslintIgnore": [
+    "coverage/**",
+    "lib/**"
+  ]
 }
