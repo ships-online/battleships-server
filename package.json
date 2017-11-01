@@ -29,7 +29,7 @@
     "nyc": "^11.2.1"
   },
   "dependencies": {
-    "@ckeditor/ckeditor5-utils": "^0.7.0",
+    "@ckeditor/ckeditor5-utils": "^1.0.0-alpha.1",
     "battleships-engine": "https://github.com/ships-online/battleships-engine.git",
     "shortid": "^2.2.6",
     "socket.io": "^1.5.0"
