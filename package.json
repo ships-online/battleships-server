@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node server.js",
     "compile": "gulp compile",
-    "test": "nyc --all mocha",
+    "test": "nyc --all --reporter=lcov --reporter=text mocha",
     "lint": "eslint --quiet '**/*.js'",
     "precommit": "lint-staged"
   },
