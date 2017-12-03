@@ -5,7 +5,9 @@
   "main": "index.js",
   "scripts": {
     "start": "node server.js",
-    "compile": "gulp compile",
+    "compile:engine": "battleships-compile --src node_modules/battleships-engine/src --dest lib/battleships-engine/src --relative ../../ --format cjs",
+    "compile:utils": "battleships-compile --src node_modules/@ckeditor/ckeditor5-utils/src --dest lib/@ckeditor/ckeditor5-utils/src --relative ../../ --format cjs",
+    "compile": "rm -rf lib && npm run compile:engine && npm run compile:utils",
     "test": "nyc --all --reporter=lcov --reporter=text mocha",
     "lint": "eslint --quiet '**/*.js'",
     "precommit": "lint-staged"
@@ -21,10 +23,9 @@
   "author": "Oskar Wróbel <kontakt@oskarwrobel.pl>",
   "license": "ISC",
   "devDependencies": {
-    "battleships-dev-tools": "https://github.com/ships-online/battleships-dev-tools.git",
+    "battleships-dev-tools": "file:../battleships-dev-tools",
     "eslint": "^4.10.0",
     "eslint-config-ckeditor5": "^1.0.6",
-    "gulp": "^3.9.1",
     "husky": "^0.14.3",
     "lint-staged": "^4.3.0",
     "mocha": "^4.0.1",
