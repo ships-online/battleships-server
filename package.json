@@ -23,7 +23,7 @@
   "author": "Oskar Wróbel <kontakt@oskarwrobel.pl>",
   "license": "ISC",
   "devDependencies": {
-    "battleships-dev-tools": "file:../battleships-dev-tools",
+    "battleships-dev-tools": "https://github.com/ships-online/battleships-dev-tools.git",
     "eslint": "^4.10.0",
     "eslint-config-ckeditor5": "^1.0.6",
     "husky": "^0.14.3",
