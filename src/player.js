@@ -4,9 +4,8 @@ const ObservableMixin = require( '../lib/@ckeditor/ckeditor5-utils/src/observabl
 const mix = require( '../lib/@ckeditor/ckeditor5-utils/src/mix.js' ).default;
 
 /**
- * Player class.
+ * Class that represents single player in the game.
  *
- * Represents single player in the game.
  * @mixes ObservableMixin
  */
 class Player {

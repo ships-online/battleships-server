@@ -8,7 +8,7 @@ const Player = require( './player.js' );
 const shortId = require( 'shortid' );
 
 /**
- * Game class.
+ * Class that represents single game.
  *
  * @mixes ObservableMixin
  */

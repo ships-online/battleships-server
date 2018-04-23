@@ -28,12 +28,13 @@ class Games {
 	}
 
 	/**
-	 * @param {socket} socket Socket.io socket;
+	 * Handles new client connecting to the WebSocket.
+	 *
+	 * @param {socket} socket Socket.io instance.
 	 */
 	handleNewClient( socket ) {
 		// When socket sends `create` event.
 		socket.on( 'create', settings => {
-			// Then create new game.
 			const game = this._createGame( socket, settings );
 
 			// Sends back information about created game.
