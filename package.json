@@ -8,7 +8,7 @@
     "compile:engine": "battleships-compile --src node_modules/battleships-engine/src --dest lib/battleships-engine/src --relative ../../ --format cjs",
     "compile:utils": "battleships-compile --src node_modules/@ckeditor/ckeditor5-utils/src --dest lib/@ckeditor/ckeditor5-utils/src --relative ../../ --format cjs",
     "compile": "rm -rf lib && npm run compile:engine && npm run compile:utils",
-    "test": "nyc --all --reporter=lcov --reporter=text mocha",
+    "test": "nyc --all --reporter=lcov --reporter=text mocha -- tests",
     "lint": "eslint --quiet '**/*.js'",
     "precommit": "lint-staged"
   },
