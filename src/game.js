@@ -14,7 +14,7 @@ const shortId = require( 'shortid' );
  */
 class Game {
 	/**
-	 * @param {socket.io} io Socket.io
+	 * @param {socket.io} io Socket.io instance.
 	 * @param {Object} settings Game settings.
 	 * @param {Number} [settings.size] Size of the battlefield - how many fields long height will be.
 	 * @param {Object} [settings.shipsSchema] Schema with ships allowed on the battlefield.
@@ -46,7 +46,7 @@ class Game {
 		 * Id of active player.
 		 *
 		 * @observable
-		 * @type {String}
+		 * @member {String} #acrivePlayer
 		 */
 		this.set( 'activePlayer', null );
 
@@ -54,7 +54,7 @@ class Game {
 		 * Game status.
 		 *
 		 * @observable
-		 * @type {'available'|'full'|'battle'|'over'}
+		 * @member {'available'|'full'|'battle'|'over'} #status
 		 */
 		this.set( 'status', 'available' );
 
@@ -79,8 +79,8 @@ class Game {
 	create( socket ) {
 		this.player.socket = socket;
 
-		this._handleGameStart();
 		this._handlePlayerReady( this.player );
+		this._handleGameStart();
 		this._handlePlayerShoot( this.player, this.opponent );
 		this._handlePlayerRematchRequest( this.player );
 	}
@@ -95,6 +95,39 @@ class Game {
 		this._handlePlayerReady( this.opponent );
 		this._handlePlayerShoot( this.opponent, this.player );
 		this._handlePlayerRematchRequest( this.opponent );
+	}
+
+	/**
+	 * Destroys the game instance, destroy sockets, detach listeners.
+	 */
+	destroy() {
+		const room = this._io.sockets.adapter.rooms[ this.id ];
+
+		if ( room ) {
+			const socketsInRoom = Object.keys( this._io.sockets.adapter.rooms[ this.id ].sockets );
+
+			for ( const socketId of socketsInRoom ) {
+				this._io.sockets.connected[ socketId ].disconnect();
+			}
+		}
+
+		this.stopListening();
+	}
+
+	/**
+	 * Handles both `#player` and `#opponent` are ready ans starts the battle.
+	 *
+	 * @private
+	 */
+	_handleGameStart() {
+		Promise.all( [
+			this.player.waitForReady(),
+			this.opponent.waitForReady()
+		] ).then( () => {
+			this.status = 'battle';
+			this.activePlayer = this.player.id;
+			this._io.sockets.in( this.id ).emit( 'battleStarted', { activePlayer: this.activePlayer } );
+		} );
 	}
 
 	/**
@@ -122,19 +155,6 @@ class Game {
 				socket.emit( 'readyResponse' );
 				socket.broadcast.to( this.id ).emit( 'playerReady' );
 			}
-		} );
-	}
-
-	/**
-	 * Handles both `#player` and `#opponent` are ready ans starts the battle.
-	 *
-	 * @private
-	 */
-	_handleGameStart() {
-		Promise.all( [ this.player.waitForReady(), this.opponent.waitForReady() ] ).then( () => {
-			this.status = 'battle';
-			this.activePlayer = this.player.id;
-			this._io.sockets.in( this.id ).emit( 'battleStarted', { activePlayer: this.activePlayer } );
 		} );
 	}
 
@@ -207,23 +227,6 @@ class Game {
 
 			this._handleGameStart();
 		} );
-	}
-
-	/**
-	 * Destroys the game instance, destroy sockets, detach listeners.
-	 */
-	destroy() {
-		const room = this._io.sockets.adapter.rooms[ this.id ];
-
-		if ( room ) {
-			const socketsInRoom = Object.keys( this._io.sockets.adapter.rooms[ this.id ].sockets );
-
-			for ( const socketId of socketsInRoom ) {
-				this._io.sockets.connected[ socketId ].disconnect();
-			}
-		}
-
-		this.stopListening();
 	}
 }
 

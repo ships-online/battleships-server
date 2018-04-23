@@ -3,7 +3,7 @@
 const Game = require( './game.js' );
 
 /**
- * Class for games manging.
+ * Class for games managing.
  */
 class Games {
 	/**
