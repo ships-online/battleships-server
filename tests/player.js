@@ -1,7 +1,9 @@
+'use strict';
+
 const expect = require( 'chai' ).expect;
+const sinon = require( 'sinon' );
 const Player = require( '../src/player.js' );
 const Battlefield = require( '../lib/battleships-engine/src/battlefield.js' ).default;
-const sinon = require( 'sinon' );
 
 describe( 'Player', () => {
 	let player;

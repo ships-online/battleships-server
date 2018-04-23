@@ -32,7 +32,7 @@ class Player {
 		 * Defines if player is ready to the battle or not.
 		 *
 		 * @observable
-		 * @type {Boolean}
+		 * @member {Boolean} #isReady
 		 */
 		this.set( 'isReady', false );
 
@@ -40,7 +40,7 @@ class Player {
 		 * Defines if player requested rematch and waits for it.
 		 *
 		 * @observable
-		 * @type {Boolean}
+		 * @member {Boolean} #rematchRequested
 		 */
 		this.set( 'rematchRequested', false );
 	}
