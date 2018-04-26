@@ -34,18 +34,6 @@ describe( 'Player', () => {
 		} );
 	} );
 
-	describe( 'isInGame', () => {
-		it( 'should return `true` when socket is set', () => {
-			player.socket = {};
-
-			expect( player.isInGame ).to.true;
-		} );
-
-		it( 'should return `false` when socket is set', () => {
-			expect( player.isInGame ).to.false;
-		} );
-	} );
-
 	describe( 'waitForReady()', () => {
 		it( 'should return promise which resolve when player will be ready', done => {
 			player.waitForReady().then( () => {

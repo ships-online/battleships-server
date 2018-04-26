@@ -48,14 +48,7 @@ class Player {
 	 * @returns {String|null} Return player id when player is connected with to the socket or `null` otherwise.
 	 */
 	get id() {
-		return this.isInGame ? this.socket.id : null;
-	}
-
-	/**
-	 * @returns {boolean} Return `true` when player is connected to the socket or `false` otherwise.
-	 */
-	get isInGame() {
-		return !!this.socket;
+		return this.socket ? this.socket.id : null;
 	}
 
 	/**
