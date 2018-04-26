@@ -3,11 +3,11 @@
 const Game = require( './game.js' );
 
 /**
- * Class for games managing.
+ * Class for managing games.
  */
 class Games {
 	/**
-	 * @param {socket.io} io Socket.io packet.
+	 * @param {socket.io} io Socket.io
 	 */
 	constructor( io ) {
 		/**
@@ -57,7 +57,7 @@ class Games {
 					// Sends back information about game.
 					socket.emit( 'joinResponse', {
 						response: {
-							settings: game.settings,
+							settings: game.player.battlefield.settings,
 							playerId: socket.id,
 							opponentId: game.player.id,
 							isOpponentReady: game.player.isReady,
