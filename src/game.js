@@ -36,17 +36,10 @@ class Game {
 		this.id = shortId.generate();
 
 		/**
-		 * Game settings.
-		 *
-		 * @type {Object}
-		 */
-		this.settings = settings;
-
-		/**
 		 * Id of active player.
 		 *
 		 * @observable
-		 * @member {String} #acrivePlayer
+		 * @member {String} #activePlayer
 		 */
 		this.set( 'activePlayer', null );
 
@@ -144,9 +137,7 @@ class Game {
 				return;
 			}
 
-			if ( !player.isInGame ) {
-				socket.emit( 'readyResponse', { error: 'player-not-in-game' } );
-			} else if ( !player.battlefield.validateShips( ships ) ) {
+			if ( !player.battlefield.validateShips( ships ) ) {
 				socket.emit( 'readyResponse', { error: 'invalid-ships-configuration' } );
 			} else {
 				player.battlefield.shipsCollection.add( ShipsCollection.createShipsFromJSON( ships ) );
