@@ -5,10 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "node server.js",
-    "compile:engine": "battleships-compile --src node_modules/battleships-engine/src --dest lib/battleships-engine/src --relative ../../ --format cjs",
-    "compile:core": "battleships-compile --src node_modules/battleships-core/tests --dest lib/battleships-core/tests --relative ../../ --format cjs",
-    "compile:utils": "battleships-compile --src node_modules/@ckeditor/ckeditor5-utils/src --dest lib/@ckeditor/ckeditor5-utils/src --relative ../../ --format cjs",
-    "compile": "rm -rf lib && npm run compile:engine && npm run compile:core && npm run compile:utils",
+    "compile": "rm -rf lib && node bin/compile.js",
     "test": "nyc --all --reporter=lcov --reporter=text mocha -- tests",
     "lint": "eslint --quiet '**/*.js'",
     "precommit": "lint-staged"
