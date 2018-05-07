@@ -25,7 +25,7 @@ describe( 'Game', () => {
 	describe( 'constructor()', () => {
 		it( 'should create game instance', () => {
 			expect( game.id ).to.not.empty;
-			expect( game.activePlayer ).to.null;
+			expect( game.activePlayerId ).to.null;
 			expect( game.status ).to.equal( 'available' );
 			expect( game.player ).to.instanceof( Player );
 			expect( game.player.battlefield.size ).to.equal( 10 );

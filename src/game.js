@@ -39,9 +39,9 @@ class Game {
 		 * Id of active player.
 		 *
 		 * @observable
-		 * @member {String} #activePlayer
+		 * @member {String} #activePlayerId
 		 */
-		this.set( 'activePlayer', null );
+		this.set( 'activePlayerId', null );
 
 		/**
 		 * Game status.
@@ -118,8 +118,8 @@ class Game {
 			this.opponent.waitForReady()
 		] ).then( () => {
 			this.status = 'battle';
-			this.activePlayer = this.player.id;
-			this._io.sockets.in( this.id ).emit( 'battleStarted', { activePlayer: this.activePlayer } );
+			this.activePlayerId = this.player.id;
+			this._io.sockets.in( this.id ).emit( 'battleStarted', { activePlayerId: this.activePlayerId } );
 		} );
 	}
 
@@ -162,13 +162,13 @@ class Game {
 		socket.on( 'shoot', position => {
 			if ( this.status != 'battle' ) {
 				socket.emit( 'shootResponse', { error: 'invalid-game-status' } );
-			} else if ( this.activePlayer != player.id ) {
+			} else if ( this.activePlayerId != player.id ) {
 				socket.emit( 'shootResponse', { error: 'invalid-turn' } );
 			} else {
 				const response = opponent.battlefield.shoot( position );
 
 				if ( response.type == 'missed' || response.notEmpty ) {
-					this.activePlayer = opponent.id;
+					this.activePlayerId = opponent.id;
 				} else {
 					if ( response.sunk ) {
 						if ( Array.from( opponent.battlefield.shipsCollection ).every( ship => ship.isSunk ) ) {
@@ -179,7 +179,7 @@ class Game {
 					}
 				}
 
-				response.activePlayer = this.activePlayer;
+				response.activePlayerId = this.activePlayerId;
 
 				socket.emit( 'shootResponse', { response } );
 				socket.broadcast.to( this.id ).emit( 'playerShoot', response );
@@ -212,7 +212,7 @@ class Game {
 		Promise.all( [ this.player.waitForRematch(), this.opponent.waitForRematch() ] ).then( () => {
 			this.player.reset();
 			this.opponent.reset();
-			this.activePlayer = null;
+			this.activePlayerId = null;
 			this.status = 'full';
 			this._io.sockets.in( this.id ).emit( 'rematch' );
 
