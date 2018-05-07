@@ -210,7 +210,9 @@ class Game {
 	 */
 	_handleRematch() {
 		Promise.all( [ this.player.waitForRematch(), this.opponent.waitForRematch() ] ).then( () => {
+			this.player.battlefield.shipsCollection.clear();
 			this.player.reset();
+			this.opponent.battlefield.shipsCollection.clear();
 			this.opponent.reset();
 			this.activePlayerId = null;
 			this.status = 'full';
