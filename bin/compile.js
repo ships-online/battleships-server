@@ -1,7 +1,7 @@
 'use strict';
 
 const fs = require( 'fs' );
-const compiler = require( '../../battleships-dev-tools/lib/tasks/compile.js' );
+const compiler = require( 'battleships-dev-tools/lib/tasks/compile.js' );
 const replace = {
 	'@ckeditor/ckeditor5-': '../../@ckeditor/ckeditor5-',
 	'battleships-': '../../@ckeditor/battleships-'
