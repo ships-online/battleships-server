@@ -172,7 +172,7 @@ class Game {
 				} else {
 					if ( response.sunk ) {
 						if ( Array.from( opponent.battlefield.shipsCollection ).every( ship => ship.isSunk ) ) {
-							response.winner = player.id;
+							response.winnerId = player.id;
 
 							this._handleRematch();
 						}
