@@ -166,17 +166,18 @@ class Game {
 				socket.emit( 'shootResponse', { error: 'invalid-turn' } );
 			} else {
 				const response = opponent.battlefield.shoot( position );
+				const opponentShips = opponent.battlefield.shipsCollection;
+				const playerShips = player.battlefield.shipsCollection;
 
 				if ( response.type == 'missed' || response.notEmpty ) {
 					this.activePlayerId = opponent.id;
-				} else {
-					if ( response.sunk ) {
-						if ( Array.from( opponent.battlefield.shipsCollection ).every( ship => ship.isSunk ) ) {
-							response.winnerId = player.id;
+				} else if ( response.sunk && Array.from( opponentShips ).every( ship => ship.isSunk ) ) {
+					response.winnerId = player.id;
+					response.winnerShips = Array.from( playerShips )
+						.filter( ship => !ship.isSunk )
+						.map( ship => ship.toJSON() );
 
-							this._handleRematch();
-						}
-					}
+					this._handleRematch();
 				}
 
 				response.activePlayerId = this.activePlayerId;
