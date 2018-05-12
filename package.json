@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "node server.js",
-    "compile": "rm -rf lib && node bin/compile.js",
+    "compile": "rm -rf lib && node dev/compile",
     "test": "nyc --all --reporter=lcov --reporter=text mocha -- tests",
     "lint": "eslint --quiet '**/*.js'",
     "precommit": "lint-staged"
