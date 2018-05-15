@@ -13,13 +13,13 @@ deploy( {
 	username: process.env.BATTLESHIPS_DEPLOY_USERNAME,
 	host: process.env.BATTLESHIPS_DEPLOY_HOST,
 	privateKey: process.env.BATTLESHIPS_DEPLOY_KEY,
-	remote( exec ) {
-		exec( `git clone ${ repository } ${ dest }`, { silent: true } );
-		exec( 'git pull', { cwd } );
-		exec( 'npm4 install --production', { cwd, silent: true } );
-		exec( 'rm -rf lib', { cwd } );
-		exec( 'node8 ./dev/compile', { cwd } );
-		exec( `devil www restart ${ domain }` );
+	execute( local, remote ) {
+		remote( `git clone ${ repository } ${ dest }`, { silent: true } );
+		remote( 'git pull', { cwd } );
+		remote( 'npm4 install --production', { cwd, silent: true } );
+		remote( 'rm -rf lib', { cwd } );
+		remote( 'node8 ./dev/compile', { cwd } );
+		remote( `devil www restart ${ domain }` );
 	}
 } )
 	.then( () => {
