@@ -11,4 +11,4 @@ const games = new Games( io );
 
 io.on( 'connect', socket => games.handleNewClient( socket ) );
 
-console.log( 'Battle Ships socket server started.' );
+console.log( `BattleShips socket server started on port: ${ port }` );
