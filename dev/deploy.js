@@ -16,7 +16,7 @@ deploy( {
 	execute( local, remote ) {
 		remote( `git clone ${ repository } ${ dest }`, { silent: true } );
 		remote( 'git pull', { cwd } );
-		remote( 'npm4 install --production', { cwd, silent: true } );
+		remote( 'npm4 update --production', { cwd, silent: true } );
 		remote( 'rm -rf lib', { cwd } );
 		remote( 'node8 ./dev/compile', { cwd } );
 		remote( `devil www restart ${ domain }` );
