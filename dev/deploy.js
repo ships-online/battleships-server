@@ -5,7 +5,7 @@
 const deploy = require( 'deploy-tools/src/deploy' );
 
 const repository = 'https://github.com/ships-online/battleships-server.git';
-const domain = 'shipsserver.oskarwrobel.pl';
+const domain = 'server.ships-online.com';
 const dest = `domains/${ domain }/public_nodejs`;
 const cwd = `/usr/home/oskarwrobel/${ dest }`;
 
