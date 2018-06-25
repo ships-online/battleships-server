@@ -14,19 +14,19 @@ const shortId = require( 'shortid' );
  */
 class Game {
 	/**
-	 * @param {socket.io} io Socket.io instance.
+	 * @param {SocketServer} socketServer
 	 * @param {Object} settings Game settings.
 	 * @param {Number} [settings.size] Size of the battlefield - how many fields long height will be.
 	 * @param {Object} [settings.shipsSchema] Schema with ships allowed on the battlefield.
 	 */
-	constructor( io, settings ) {
+	constructor( socketServer, settings ) {
 		/**
 		 * Socket.io object.
 		 *
 		 * @private
 		 * @type {socket.io}
 		 */
-		this._io = io;
+		this._socketServer = socketServer;
 
 		/**
 		 * Game id.
@@ -94,14 +94,8 @@ class Game {
 	 * Destroys the game instance, destroy sockets, detach listeners.
 	 */
 	destroy() {
-		const room = this._io.sockets.adapter.rooms[ this.id ];
-
-		if ( room ) {
-			const socketsInRoom = Object.keys( this._io.sockets.adapter.rooms[ this.id ].sockets );
-
-			for ( const socketId of socketsInRoom ) {
-				this._io.sockets.connected[ socketId ].disconnect();
-			}
+		for ( const socket of this._socketServer.getSocketsInRoom( this.id ) ) {
+			socket.disconnect();
 		}
 
 		this.stopListening();
@@ -119,7 +113,7 @@ class Game {
 		] ).then( () => {
 			this.status = 'battle';
 			this.activePlayerId = this.player.id;
-			this._io.sockets.in( this.id ).emit( 'battleStarted', { activePlayerId: this.activePlayerId } );
+			this._socketServer.sendToRoom( this.id, 'battleStarted', { activePlayerId: this.activePlayerId } );
 		} );
 	}
 
@@ -132,19 +126,20 @@ class Game {
 	_handlePlayerReady( player ) {
 		const socket = player.socket;
 
-		socket.on( 'ready', ships => {
+		socket.handleRequest( 'ready', ( response, ships ) => {
 			if ( player.isReady ) {
+				response.success();
 				return;
 			}
 
 			if ( !player.battlefield.validateShips( ships ) ) {
-				socket.emit( 'readyResponse', { error: 'invalid-ships-configuration' } );
+				response.error( 'invalid-ships-configuration' );
 			} else {
 				player.battlefield.shipsCollection.add( ShipsCollection.createShipsFromJSON( ships ) );
 				player.isReady = true;
 
-				socket.emit( 'readyResponse' );
-				socket.broadcast.to( this.id ).emit( 'playerReady' );
+				response.success();
+				socket.sendToRoom( this.id, 'playerReady' );
 			}
 		} );
 	}
@@ -159,31 +154,31 @@ class Game {
 	_handlePlayerShoot( player, opponent ) {
 		const socket = player.socket;
 
-		socket.on( 'shoot', position => {
+		socket.handleRequest( 'shoot', ( response, position ) => {
 			if ( this.status != 'battle' ) {
-				socket.emit( 'shootResponse', { error: 'invalid-game-status' } );
+				response.error( 'invalid-game-status' );
 			} else if ( this.activePlayerId != player.id ) {
-				socket.emit( 'shootResponse', { error: 'invalid-turn' } );
+				response.error( 'invalid-turn' );
 			} else {
-				const response = opponent.battlefield.shoot( position );
+				const data = opponent.battlefield.shoot( position );
 				const opponentShips = opponent.battlefield.shipsCollection;
 				const playerShips = player.battlefield.shipsCollection;
 
-				if ( response.type == 'missed' || response.notEmpty ) {
+				if ( data.type == 'missed' || data.notEmpty ) {
 					this.activePlayerId = opponent.id;
-				} else if ( response.sunk && Array.from( opponentShips ).every( ship => ship.isSunk ) ) {
-					response.winnerId = player.id;
-					response.winnerShips = Array.from( playerShips )
+				} else if ( data.sunk && Array.from( opponentShips ).every( ship => ship.isSunk ) ) {
+					data.winnerId = player.id;
+					data.winnerShips = Array.from( playerShips )
 						.filter( ship => !ship.isSunk )
 						.map( ship => ship.toJSON() );
 
 					this._handleRematch();
 				}
 
-				response.activePlayerId = this.activePlayerId;
+				data.activePlayerId = this.activePlayerId;
 
-				socket.emit( 'shootResponse', { response } );
-				socket.broadcast.to( this.id ).emit( 'playerShoot', response );
+				response.success( data );
+				socket.sendToRoom( this.id, 'playerShoot', data );
 			}
 		} );
 	}
@@ -197,10 +192,10 @@ class Game {
 	_handlePlayerRematchRequest( player ) {
 		const socket = player.socket;
 
-		socket.on( 'requestRematch', () => {
-			socket.emit( 'requestRematchResponse' );
+		socket.handleRequest( 'requestRematch', response => {
+			response.success();
 			player.rematchRequested = true;
-			this._io.sockets.in( this.id ).emit( 'playerRequestRematch', { playerId: player.id } );
+			socket.sendToRoom( this.id, 'playerRequestRematch', { playerId: player.id } );
 		} );
 	}
 
@@ -217,7 +212,7 @@ class Game {
 			this.opponent.reset();
 			this.activePlayerId = null;
 			this.status = 'full';
-			this._io.sockets.in( this.id ).emit( 'rematch' );
+			this._socketServer.sendToRoom( this.id, 'rematch' );
 
 			this._handleGameStart();
 		} );

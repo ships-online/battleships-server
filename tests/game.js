@@ -1,16 +1,15 @@
 'use strict';
 
 const Game = require( '../src/game' );
+const { SocketServer, Socket } = require( '../src/socketserver' );
 const Player = require( '../src/player' );
 const expect = require( 'chai' ).expect;
 const { ioMock, socketMock } = require( '../lib/battleships-core/tests/_utils/iomock' );
 
 describe( 'Game', () => {
-	let game, gameSettings;
+	let game, gameSettings, socketServer, socket;
 
 	beforeEach( () => {
-		ioMock();
-
 		gameSettings = {
 			size: 10,
 			shipsSchema: {
@@ -19,7 +18,10 @@ describe( 'Game', () => {
 			}
 		};
 
-		game = new Game( ioMock, gameSettings );
+		socketServer = new SocketServer( ioMock() );
+		socket = new Socket( socketMock );
+
+		game = new Game( socketServer, gameSettings );
 	} );
 
 	describe( 'constructor()', () => {
@@ -38,12 +40,12 @@ describe( 'Game', () => {
 
 	describe( 'create()', () => {
 		beforeEach( () => {
-			game.create( socketMock );
+			game.create( socket );
 		} );
 
 		describe( 'handling player ready', () => {
 			it( 'should response error when player ship configuration is invalid', done => {
-				socketMock.on( 'readyResponse', data => {
+				socketMock.on( 'response-ready', data => {
 					expect( data ).to.deep.equal( { error: 'invalid-ships-configuration' } );
 					done();
 				} );
@@ -80,8 +82,7 @@ describe( 'Game', () => {
 					}
 				];
 
-				socketMock.on( 'readyResponse', data => {
-					expect( data ).to.undefined;
+				socketMock.on( 'response-ready', () => {
 					expect( game.player.isReady ).to.true;
 					expect( game.player.battlefield.shipsCollection.toJSON() ).to.deep.equal( shipsJSON );
 

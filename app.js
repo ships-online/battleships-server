@@ -5,10 +5,12 @@
 const port = process.env.PORT || 8080;
 
 const io = require( 'socket.io' )( port );
+const { SocketServer } = require( './src/socketserver.js' );
 const Games = require( './src/games.js' );
 
-const games = new Games( io );
+const socketServer = new SocketServer( io );
+const games = new Games( socketServer );
 
-io.on( 'connect', socket => games.handleNewClient( socket ) );
+games.init();
 
 console.log( `BattleShips socket server started on port: ${ port }` );

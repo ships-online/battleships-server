@@ -7,16 +7,16 @@ const Game = require( './game.js' );
  */
 class Games {
 	/**
-	 * @param {socket.io} io Socket.io
+	 * @param {SocketServer} socketServer
 	 */
-	constructor( io ) {
+	constructor( socketServer ) {
 		/**
-		 * Socket io.
+		 * Instance for managing socket connections.
 		 *
 		 * @private
-		 * @type {socket.io}
+		 * @type {SocketServer}
 		 */
-		this._io = io;
+		this._socketServer = socketServer;
 
 		/**
 		 * Stores existing games.
@@ -28,47 +28,44 @@ class Games {
 	}
 
 	/**
+	 * Starts listening on new clients.
+	 */
+	init() {
+		this._socketServer.on( 'connect', ( evt, socket ) => this._handleNewClient( socket ) );
+	}
+
+	/**
 	 * Handles new client connecting to the WebSocket.
 	 *
+	 * @private
 	 * @param {socket} socket Socket.io instance.
 	 */
-	handleNewClient( socket ) {
-		// When socket sends `create` event.
-		socket.on( 'create', settings => {
+	_handleNewClient( socket ) {
+		socket.handleRequest( 'create', ( response, settings ) => {
 			const game = this._createGame( socket, settings );
 
-			// Sends back information about created game.
-			socket.emit( 'createResponse', {
-				response: {
-					gameId: game.id,
-					playerId: game.player.id
-				}
+			response.success( {
+				gameId: game.id,
+				playerId: game.player.id
 			} );
 
-			// And start to listen on socket disconnect.
 			socket.on( 'disconnect', () => this._handleHostLeft( game ) );
 		} );
 
-		// When socket sends `join` event.
-		socket.on( 'join', gameId => {
-			// Then join socket to the game.
+		socket.handleRequest( 'join', ( response, gameId ) => {
 			this._joinGame( socket, gameId )
 				.then( game => {
-					// Sends back information about game.
-					socket.emit( 'joinResponse', {
-						response: {
-							settings: game.player.battlefield.settings,
-							playerId: socket.id,
-							opponentId: game.player.id,
-							isOpponentReady: game.player.isReady,
-							interestedPlayersNumber: this._getNumberOfPlayersInRoom( game.id ) - 1
-						}
+					response.success( {
+						settings: game.player.battlefield.settings,
+						playerId: socket.id,
+						opponentId: game.player.id,
+						isOpponentReady: game.player.isReady,
+						interestedPlayersNumber: Array.from( this._socketServer.getSocketsInRoom( game.id ) ).length - 1
 					} );
 
-					// And start to listen on socket disconnect.
 					socket.on( 'disconnect', () => this._handleClientLeft( game, socket.id ) );
 				} )
-				.catch( error => socket.emit( 'joinResponse', error ) );
+				.catch( error => response.error( error ) );
 		} );
 	}
 
@@ -81,7 +78,7 @@ class Games {
 	 * @returns {Game} Game instance.
 	 */
 	_createGame( socket, settings ) {
-		const game = new Game( this._io, settings );
+		const game = new Game( this._socketServer, settings );
 
 		// Create game.
 		game.create( socket );
@@ -110,24 +107,21 @@ class Games {
 			socket.join( game.id );
 
 			// Let know other players in the room that new socket joined.
-			socket.broadcast.to( game.id ).emit( 'interestedPlayerJoined', {
-				interestedPlayersNumber: this._getNumberOfPlayersInRoom( game.id ) - 1
+			socket.sendToRoom( game.id, 'interestedPlayerJoined', {
+				interestedPlayersNumber: Array.from( this._socketServer.getSocketsInRoom( game.id ) ).length - 1
 			} );
 
 			// Wait until client accept the game.
-			socket.on( 'accept', () => {
-				// When game is still available.
+			socket.handleRequest( 'accept', response => {
 				if ( game.status == 'available' ) {
 					// Then add socket to the game
 					// and inform rest of the clients in room that opponent accepts the game.
 					game.join( socket );
-					socket.emit( 'acceptResponse' );
-					socket.broadcast.to( game.id ).emit( 'interestedPlayerAccepted', { id: game.opponent.id } );
-				// Otherwise sends information that game is not available.
+					response.success( 'acceptResponse' );
+					socket.sendToRoom( game.id, 'interestedPlayerAccepted', { id: game.opponent.id } );
+				// Otherwise sends information that the game is not available.
 				} else {
-					socket.emit( 'acceptResponse', {
-						error: this.opponent.id == socket.id ? 'already-in-game' : 'not-available'
-					} );
+					response.error( this.opponent.id == socket.id ? 'already-in-game' : 'not-available' );
 				}
 			} );
 
@@ -144,7 +138,7 @@ class Games {
 	 * @param {Game} game Game instance.
 	 */
 	_handleHostLeft( game ) {
-		this._io.sockets.in( game.id ).emit( 'gameOver', 'host-left' );
+		this._socketServer.sendToRoom( game.id, 'gameOver', 'host-left' );
 		this._games.delete( game.id );
 		game.destroy();
 	}
@@ -158,34 +152,23 @@ class Games {
 		// When there was a battle.
 		if ( game.opponent.id == clientId && game.status == 'battle' ) {
 			// Finish the game and inform rest of the players.
-			this._io.sockets.in( game.id ).emit( 'gameOver', 'opponent-left' );
+			this._socketServer.sendToRoom( game.id, 'gameOver', 'opponent-left' );
 			this._games.delete( game.id );
 			game.destroy();
 		// Otherwise.
 		} else {
-			// Remove client data from the game and make game available again.
+			// Remove client data from the game and make the game available.
 			if ( game.opponent.id == clientId ) {
 				game.opponent.socket = null;
 				game.status = 'available';
 			}
 
 			// Send information for the rest of the players that client left the game.
-			this._io.sockets.in( game.id ).emit( 'playerLeft', {
+			this._socketServer.sendToRoom( game.id, 'playerLeft', {
 				opponentId: clientId,
-				interestedPlayersNumber: this._getNumberOfPlayersInRoom( game.id ) - 1
+				interestedPlayersNumber: Array.from( this._socketServer.getSocketsInRoom( game.id ) ).length - 1
 			} );
 		}
-	}
-
-	/**
-	 * @private
-	 * @param {String} roomId Id of socket room.
-	 * @returns {Number} number of players in room.
-	 */
-	_getNumberOfPlayersInRoom( roomId ) {
-		const room = this._io.sockets.adapter.rooms[ roomId ];
-
-		return room ? room.length : 0;
 	}
 }
 
