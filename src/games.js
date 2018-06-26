@@ -60,7 +60,7 @@ class Games {
 						playerId: socket.id,
 						opponentId: game.player.id,
 						isOpponentReady: game.player.isReady,
-						interestedPlayersNumber: Array.from( this._socketServer.getSocketsInRoom( game.id ) ).length - 1
+						guestsNumber: Array.from( this._socketServer.getSocketsInRoom( game.id ) ).length - 1
 					} );
 
 					socket.on( 'disconnect', () => this._handleClientLeft( game, socket.id ) );
@@ -108,7 +108,7 @@ class Games {
 
 			// Let know other players in the room that new socket joined.
 			socket.sendToRoom( game.id, 'interestedPlayerJoined', {
-				interestedPlayersNumber: Array.from( this._socketServer.getSocketsInRoom( game.id ) ).length - 1
+				guestsNumber: Array.from( this._socketServer.getSocketsInRoom( game.id ) ).length - 1
 			} );
 
 			// Wait until client accept the game.
@@ -166,7 +166,7 @@ class Games {
 			// Send information for the rest of the players that client left the game.
 			this._socketServer.sendToRoom( game.id, 'playerLeft', {
 				opponentId: clientId,
-				interestedPlayersNumber: Array.from( this._socketServer.getSocketsInRoom( game.id ) ).length - 1
+				guestsNumber: Array.from( this._socketServer.getSocketsInRoom( game.id ) ).length - 1
 			} );
 		}
 	}
