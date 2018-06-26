@@ -117,7 +117,7 @@ class Games {
 					// Then add socket to the game
 					// and inform rest of the clients in room that opponent accepts the game.
 					game.join( socket );
-					response.success( 'acceptResponse' );
+					response.success();
 					socket.sendToRoom( game.id, 'guestAccepted', { id: game.opponent.id } );
 				// Otherwise sends information that the game is not available.
 				} else {
