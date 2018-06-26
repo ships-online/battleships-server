@@ -107,7 +107,7 @@ class Games {
 			socket.join( game.id );
 
 			// Let know other players in the room that new socket joined.
-			socket.sendToRoom( game.id, 'interestedPlayerJoined', {
+			socket.sendToRoom( game.id, 'guestJoined', {
 				guestsNumber: Array.from( this._socketServer.getSocketsInRoom( game.id ) ).length - 1
 			} );
 
@@ -118,7 +118,7 @@ class Games {
 					// and inform rest of the clients in room that opponent accepts the game.
 					game.join( socket );
 					response.success( 'acceptResponse' );
-					socket.sendToRoom( game.id, 'interestedPlayerAccepted', { id: game.opponent.id } );
+					socket.sendToRoom( game.id, 'guestAccepted', { id: game.opponent.id } );
 				// Otherwise sends information that the game is not available.
 				} else {
 					response.error( this.opponent.id == socket.id ? 'already-in-game' : 'not-available' );
