@@ -139,7 +139,7 @@ class Game {
 				player.isReady = true;
 
 				response.success();
-				socket.sendToRoom( this.id, 'playerReady' );
+				socket.sendToRoom( this.id, 'opponentReady' );
 			}
 		} );
 	}
@@ -178,7 +178,7 @@ class Game {
 				data.activePlayerId = this.activePlayerId;
 
 				response.success( data );
-				socket.sendToRoom( this.id, 'playerShoot', data );
+				socket.sendToRoom( this.id, 'opponentShoot', data );
 			}
 		} );
 	}
@@ -195,7 +195,7 @@ class Game {
 		socket.handleRequest( 'requestRematch', response => {
 			response.success();
 			player.rematchRequested = true;
-			socket.sendToRoom( this.id, 'playerRequestRematch', { playerId: player.id } );
+			socket.sendToRoom( this.id, 'opponentRequestRematch', { playerId: player.id } );
 		} );
 	}
 
