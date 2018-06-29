@@ -74,7 +74,7 @@ class Game {
 
 		this._handlePlayerReady( this.player );
 		this._handleGameStart();
-		this._handlePlayerShoot( this.player, this.opponent );
+		this._handlePlayerShot( this.player, this.opponent );
 		this._handlePlayerRematchRequest( this.player );
 	}
 
@@ -86,7 +86,7 @@ class Game {
 		this.status = 'full';
 
 		this._handlePlayerReady( this.opponent );
-		this._handlePlayerShoot( this.opponent, this.player );
+		this._handlePlayerShot( this.opponent, this.player );
 		this._handlePlayerRematchRequest( this.opponent );
 	}
 
@@ -145,22 +145,22 @@ class Game {
 	}
 
 	/**
-	 * Handles player shoot and validates influence on the current game.
+	 * Handles player shot and validates influence on the current game.
 	 *
 	 * @private
 	 * @param {Player} player Player instance.
 	 * @param {Player} opponent Opponent instance.
 	 */
-	_handlePlayerShoot( player, opponent ) {
+	_handlePlayerShot( player, opponent ) {
 		const socket = player.socket;
 
-		socket.handleRequest( 'shoot', ( response, position ) => {
+		socket.handleRequest( 'shot', ( response, position ) => {
 			if ( this.status != 'battle' ) {
 				response.error( 'invalid-game-status' );
 			} else if ( this.activePlayerId != player.id ) {
 				response.error( 'invalid-turn' );
 			} else {
-				const data = opponent.battlefield.shoot( position );
+				const data = opponent.battlefield.shot( position );
 				const opponentShips = opponent.battlefield.shipsCollection;
 				const playerShips = player.battlefield.shipsCollection;
 
@@ -178,7 +178,7 @@ class Game {
 				data.activePlayerId = this.activePlayerId;
 
 				response.success( data );
-				socket.sendToRoom( this.id, 'opponentShoot', data );
+				socket.sendToRoom( this.id, 'opponentShot', data );
 			}
 		} );
 	}
