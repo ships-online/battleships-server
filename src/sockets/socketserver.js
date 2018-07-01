@@ -1,7 +1,7 @@
 'use strict';
 
-const EmitterMixin = require( '../lib/@ckeditor/ckeditor5-utils/src/emittermixin.js' ).default;
-const mix = require( '../lib/@ckeditor/ckeditor5-utils/src/mix.js' ).default;
+const EmitterMixin = require( '../../lib/@ckeditor/ckeditor5-utils/src/emittermixin.js' ).default;
+const mix = require( '../../lib/@ckeditor/ckeditor5-utils/src/mix.js' ).default;
 
 /**
  * Class that wraps socket.io server.
@@ -56,6 +56,7 @@ class SocketServer {
 }
 
 mix( SocketServer, EmitterMixin );
+module.exports.SocketServer = SocketServer;
 
 /**
  * Class that wraps single socket.io socket.
@@ -129,9 +130,17 @@ class Socket {
 			callback( new Response( eventName, this._ioSocket ), ...args );
 		} );
 	}
+
+	/**
+	 * Destroys the class instance.
+	 */
+	destroy() {
+		this.stopListening();
+	}
 }
 
 mix( Socket, EmitterMixin );
+module.exports.Socket = Socket;
 
 /**
  * Response for events that makes request role.
@@ -179,5 +188,3 @@ class Response {
 		this._ioSocket.emit( this._eventName, { error } );
 	}
 }
-
-module.exports = { SocketServer, Socket };
