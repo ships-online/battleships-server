@@ -2,21 +2,31 @@
 
 const expect = require( 'chai' ).expect;
 const sinon = require( 'sinon' );
+
 const Player = require( '../src/player.js' );
-const Battlefield = require( '../lib/battleships-engine/src/battlefield.js' ).default;
 
 describe( 'Player', () => {
-	let player;
+	let player, battlefieldMock, socketMock;
 
 	beforeEach( () => {
-		player = new Player( new Battlefield() );
+		socketMock = {
+			id: 'socket-id',
+			destroy: sinon.spy()
+		};
+
+		battlefieldMock = {
+			destroy: sinon.spy(),
+			reset: sinon.spy()
+		};
+
+		player = new Player( battlefieldMock, socketMock );
 	} );
 
 	describe( 'constructor()', () => {
 		it( 'should create player instance', () => {
-			expect( player ).to.instanceof( Player );
-			expect( player.battlefield ).to.instanceof( Battlefield );
-			expect( player.socket ).to.null;
+			expect( player.battlefield ).to.equal( battlefieldMock );
+			expect( player.socket ).to.equal( socketMock );
+			expect( player.id ).to.equal( 'socket-id' );
 			expect( player.isReady ).to.false;
 			expect( player.rematchRequested ).to.false;
 		} );
@@ -27,10 +37,6 @@ describe( 'Player', () => {
 			player.socket = { id: 'foobar' };
 
 			expect( player.id ).to.equal( 'foobar' );
-		} );
-
-		it( 'should return null when socket is not set', () => {
-			expect( player.id ).to.null;
 		} );
 	} );
 
@@ -58,16 +64,33 @@ describe( 'Player', () => {
 
 	describe( 'reset()', () => {
 		it( 'should reset player to default values', () => {
-			const spy = sinon.spy( player.battlefield, 'reset' );
-
 			player.isReady = true;
 			player.rematchRequested = true;
 
 			player.reset();
 
-			expect( spy.calledOnce ).to.true;
+			sinon.assert.calledOnce( battlefieldMock.reset );
 			expect( player.isReady ).to.false;
 			expect( player.rematchRequested ).to.false;
+		} );
+	} );
+
+	describe( 'destroy()', () => {
+		it( 'should stop listening', () => {
+			const spy = sinon.spy( Player.prototype, 'stopListening' );
+
+			player.destroy();
+
+			sinon.assert.calledOnce( spy );
+
+			spy.restore();
+		} );
+
+		it( 'should destroy socket and battlefield', () => {
+			player.destroy();
+
+			sinon.assert.calledOnce( battlefieldMock.destroy );
+			sinon.assert.calledOnce( socketMock.destroy );
 		} );
 	} );
 } );

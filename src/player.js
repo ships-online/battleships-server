@@ -4,15 +4,16 @@ const ObservableMixin = require( '../lib/@ckeditor/ckeditor5-utils/src/observabl
 const mix = require( '../lib/@ckeditor/ckeditor5-utils/src/mix.js' ).default;
 
 /**
- * Class that represents single player in the game.
+ * Class that represents player in the game.
  *
  * @mixes ObservableMixin
  */
 class Player {
 	/**
-	 * @param {Battlefield} battlefield Player battlefield instance.
+	 * @param {Battlefield} battlefield
+	 * @param {Socket} socket
 	 */
-	constructor( battlefield ) {
+	constructor( battlefield, socket ) {
 		/**
 		 * Player battlefield instance.
 		 *
@@ -23,9 +24,9 @@ class Player {
 		/**
 		 * Socket.io instance.
 		 *
-		 * @type {socket|null}
+		 * @type {Socket}
 		 */
-		this.socket = null;
+		this.socket = socket;
 
 		/**
 		 * Defines if player is ready to the battle or not.
@@ -45,14 +46,14 @@ class Player {
 	}
 
 	/**
-	 * @returns {String|null} Return player id when player is connected with to the socket or `null` otherwise.
+	 * @returns {String} Return player socket id as a Player id.
 	 */
 	get id() {
-		return this.socket ? this.socket.id : null;
+		return this.socket.id;
 	}
 
 	/**
-	 * Waits until player will be ready.
+	 * Waits until player is ready.
 	 *
 	 * @returns {Promise} Promise which will be resolved when player will be ready.
 	 */
@@ -77,8 +78,16 @@ class Player {
 		this.isReady = false;
 		this.rematchRequested = false;
 	}
+
+	/**
+	 * Destroys the player.
+	 */
+	destroy() {
+		this.stopListening();
+		this.battlefield.destroy();
+		this.socket.destroy();
+	}
 }
 
 mix( Player, ObservableMixin );
-
 module.exports = Player;
