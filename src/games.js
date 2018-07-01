@@ -1,9 +1,13 @@
 'use strict';
 
 const Game = require( './game.js' );
+const Player = require( './player.js' );
+const AiPlayer = require( './aiplayer.js' );
+const OpponentBattlefield = require( '../lib/battleships-engine/src/opponentbattlefield.js' ).default;
+const LocalSocket = require( './sockets/localsocket.js' );
 
 /**
- * Class for managing games.
+ * Class for games managing.
  */
 class Games {
 	/**
@@ -28,21 +32,24 @@ class Games {
 	}
 
 	/**
-	 * Starts listening on new clients.
+	 * Starts listening on new socket connections.
 	 */
 	init() {
-		this._socketServer.on( 'connect', ( evt, socket ) => this._handleNewClient( socket ) );
+		this._socketServer.on( 'connect', ( evt, socket ) => this._handleNewConnection( socket ) );
 	}
 
 	/**
-	 * Handles new client connecting to the WebSocket.
-	 *
 	 * @private
 	 * @param {socket} socket Socket.io instance.
 	 */
-	_handleNewClient( socket ) {
+	_handleNewConnection( socket ) {
 		socket.handleRequest( 'create', ( response, settings ) => {
-			const game = this._createGame( socket, settings );
+			const game = new Game( this._socketServer );
+			const player = new Player( new OpponentBattlefield( settings.size, settings.shipsSchema ), socket );
+
+			game.create( player );
+			socket.join( game.id );
+			this._games.set( game.id, game );
 
 			response.success( {
 				gameId: game.id,
@@ -52,85 +59,65 @@ class Games {
 			socket.on( 'disconnect', () => this._handleHostLeft( game ) );
 		} );
 
-		socket.handleRequest( 'join', ( response, gameId ) => {
-			this._joinGame( socket, gameId )
-				.then( game => {
-					response.success( {
-						settings: game.player.battlefield.settings,
-						playerId: socket.id,
-						opponentId: game.player.id,
-						isOpponentReady: game.player.isReady,
-						guestsNumber: Array.from( this._socketServer.getSocketsInRoom( game.id ) ).length - 1
-					} );
+		socket.handleRequest( 'join', ( response, gameId, options = {} ) => {
+			const game = this._games.get( gameId );
+			const player = game.player;
+			const { size, shipsSchema } = player.battlefield.settings;
+			let opponent;
 
-					socket.on( 'disconnect', () => this._handleClientLeft( game, socket.id ) );
-				} )
-				.catch( error => response.error( error ) );
+			if ( !game ) {
+				return response.error( 'not-exist' );
+			}
+
+			if ( game.status != 'available' ) {
+				return response.error( 'started' );
+			}
+
+			if ( options.ai ) {
+				const aiSocket = new LocalSocket( game._socketServer );
+				opponent = new AiPlayer( new OpponentBattlefield( size, shipsSchema ), aiSocket, game );
+
+				this._handleClientAccept( game, opponent );
+				opponent.start();
+			} else {
+				opponent = new Player( new OpponentBattlefield( size, shipsSchema ), socket );
+
+				this._handleClientAccept( game, opponent );
+				socket.join( game.id );
+				socket.on( 'disconnect', () => this._handleClientLeft( game, socket.id ) );
+			}
+
+			response.success( {
+				settings: player.battlefield.settings,
+				playerId: opponent.id,
+				opponentId: player.id,
+				isOpponentReady: player.isReady,
+				guestsNumber: Array.from( this._socketServer.getSocketsInRoom( game.id ) ).length - 1
+			} );
 		} );
 	}
 
 	/**
 	 * @private
-	 * @param {socket} socket Host socket.
-	 * @param {Object} settings Game settings.
-	 * @param {Number} [settings.size] Size of the battlefield - how many fields long height will be.
-	 * @param {Object} [settings.shipsSchema] Schema with ships allowed on the battlefield.
-	 * @returns {Game} Game instance.
+	 * @param {Game} game
+	 * @param {Player} opponent
 	 */
-	_createGame( socket, settings ) {
-		const game = new Game( this._socketServer, settings );
+	_handleClientAccept( game, opponent ) {
+		const socket = opponent.socket;
 
-		// Create game.
-		game.create( socket );
+		socket.sendToRoom( game.id, 'guestJoined', {
+			guestsNumber: Array.from( this._socketServer.getSocketsInRoom( game.id ) ).length - 1
+		} );
 
-		// Create room for the game and add host socket to this room.
-		socket.join( game.id );
-
-		// Store game.
-		this._games.set( game.id, game );
-
-		return game;
-	}
-
-	/**
-	 * @private
-	 * @param {socket} socket Client socket.
-	 * @param {String} gameId Game id.
-	 * @returns {Promise.<Game, error>} Promise that return game instance when resolved or error object when rejected.
-	 */
-	_joinGame( socket, gameId ) {
-		const game = this._games.get( gameId );
-
-		// When game is available.
-		if ( game && game.status == 'available' ) {
-			// Add client socket to the game room.
-			socket.join( game.id );
-
-			// Let know other players in the room that new socket joined.
-			socket.sendToRoom( game.id, 'guestJoined', {
-				guestsNumber: Array.from( this._socketServer.getSocketsInRoom( game.id ) ).length - 1
-			} );
-
-			// Wait until client accept the game.
-			socket.handleRequest( 'accept', response => {
-				if ( game.status == 'available' ) {
-					// Then add socket to the game
-					// and inform rest of the clients in room that opponent accepts the game.
-					game.join( socket );
-					response.success();
-					socket.sendToRoom( game.id, 'guestAccepted', { id: game.opponent.id } );
-				// Otherwise sends information that the game is not available.
-				} else {
-					response.error( this.opponent.id == socket.id ? 'already-in-game' : 'not-available' );
-				}
-			} );
-
-			return Promise.resolve( game );
-
-		// When game is not available.
-		} else {
-			return Promise.reject( { error: game ? 'started' : 'not-exist' } );
-		}
+		socket.handleRequest( 'accept', response => {
+			if ( game.status == 'available' ) {
+				game.join( opponent );
+				response.success();
+				socket.sendToRoom( game.id, 'guestAccepted', { id: game.opponent.id } );
+			} else {
+				response.error( this.opponent.id == socket.id ? 'already-in-game' : 'not-available' );
+			}
+		} );
 	}
 
 	/**
@@ -149,21 +136,23 @@ class Games {
 	 * @param {String} clientId Id of disconnected socket.
 	 */
 	_handleClientLeft( game, clientId ) {
-		// When there was a battle.
-		if ( game.opponent.id == clientId && game.status == 'battle' ) {
-			// Finish the game and inform rest of the players.
+		const opponent = game.opponent;
+
+		// When there was a battle then finish the game.
+		if ( game.status == 'battle' && opponent.id == clientId ) {
 			this._socketServer.sendToRoom( game.id, 'gameOver', 'opponent-left' );
 			this._games.delete( game.id );
 			game.destroy();
 		// Otherwise.
 		} else {
-			// Remove client data from the game and make the game available.
-			if ( game.opponent.id == clientId ) {
-				game.opponent.socket = null;
+			// Remove opponent from the game and make the game available.
+			if ( opponent && opponent.id == clientId ) {
+				opponent.destroy();
+				game.opponent = null;
 				game.status = 'available';
 			}
 
-			// Send information for the rest of the players that client left the game.
+			// Send information for the rest of the players that client has left the game.
 			this._socketServer.sendToRoom( game.id, 'playerLeft', {
 				opponentId: clientId,
 				guestsNumber: Array.from( this._socketServer.getSocketsInRoom( game.id ) ).length - 1
