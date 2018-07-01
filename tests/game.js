@@ -1,46 +1,40 @@
 'use strict';
 
-const Game = require( '../src/game' );
-const { SocketServer, Socket } = require( '../src/socketserver' );
-const Player = require( '../src/player' );
 const expect = require( 'chai' ).expect;
+
+const Game = require( '../src/game' );
+const Player = require( '../src/player' );
+const Battlefield = require( '../lib/battleships-engine/src/battlefield.js' ).default;
+const { SocketServer, Socket } = require( '../src/sockets/socketserver' );
 const { ioMock, socketMock } = require( '../lib/battleships-core/tests/_utils/iomock' );
 
 describe( 'Game', () => {
-	let game, gameSettings, socketServer, socket;
+	let game, socketServer, player;
 
 	beforeEach( () => {
-		gameSettings = {
-			size: 10,
-			shipsSchema: {
-				1: 4,
-				2: 3
-			}
-		};
-
 		socketServer = new SocketServer( ioMock() );
-		socket = new Socket( socketMock );
+		player = new Player( new Battlefield( 10, { 1: 2 } ), new Socket( socketMock ) );
 
-		game = new Game( socketServer, gameSettings );
+		game = new Game( socketServer );
 	} );
 
 	describe( 'constructor()', () => {
 		it( 'should create game instance', () => {
 			expect( game.id ).to.not.empty;
-			expect( game.activePlayerId ).to.null;
 			expect( game.status ).to.equal( 'available' );
-			expect( game.player ).to.instanceof( Player );
-			expect( game.player.battlefield.size ).to.equal( 10 );
-			expect( game.player.battlefield.shipsSchema ).to.deep.equal( { 1: 4, 2: 3 } );
-			expect( game.opponent ).to.instanceof( Player );
-			expect( game.opponent.battlefield.size ).to.equal( 10 );
-			expect( game.opponent.battlefield.shipsSchema ).to.deep.equal( { 1: 4, 2: 3 } );
+			expect( game.activePlayerId ).to.null;
+			expect( game.player ).to.undefined;
+			expect( game.opponent ).to.undefined;
 		} );
 	} );
 
 	describe( 'create()', () => {
 		beforeEach( () => {
-			game.create( socket );
+			game.create( player );
+		} );
+
+		it( 'should set player', () => {
+			expect( game.player ).to.equal( player );
 		} );
 
 		describe( 'handling player ready', () => {

@@ -1,11 +1,9 @@
 'use strict';
 
-const OpponentBattlefield = require( '../lib/battleships-engine/src/opponentbattlefield.js' ).default;
 const ShipsCollection = require( '../lib/battleships-engine/src/shipscollection.js' ).default;
-const ObservableMixin = require( '../lib/@ckeditor/ckeditor5-utils/src/observablemixin.js' ).default;
-const mix = require( '../lib/@ckeditor/ckeditor5-utils/src/mix.js' ).default;
-const Player = require( './player.js' );
 const shortId = require( 'shortid' );
+const mix = require( '../lib/@ckeditor/ckeditor5-utils/src/mix.js' ).default;
+const ObservableMixin = require( '../lib/@ckeditor/ckeditor5-utils/src/observablemixin.js' ).default;
 
 /**
  * Class that represents single game.
@@ -15,11 +13,8 @@ const shortId = require( 'shortid' );
 class Game {
 	/**
 	 * @param {SocketServer} socketServer
-	 * @param {Object} settings Game settings.
-	 * @param {Number} [settings.size] Size of the battlefield - how many fields long height will be.
-	 * @param {Object} [settings.shipsSchema] Schema with ships allowed on the battlefield.
 	 */
-	constructor( socketServer, settings ) {
+	constructor( socketServer ) {
 		/**
 		 * Socket.io object.
 		 *
@@ -56,38 +51,36 @@ class Game {
 		 *
 		 * @type {Player}
 		 */
-		this.player = new Player( new OpponentBattlefield( settings.size, settings.shipsSchema ) );
 
 		/**
 		 * Opponent (client) instance.
 		 *
-		 * @type {Player}
+		 * @type {Player|AiPlayer}
 		 */
-		this.opponent = new Player( new OpponentBattlefield( settings.size, settings.shipsSchema ) );
 	}
 
 	/**
-	 * @param {socket} socket Host socket.
+	 * @param {Player} player
 	 */
-	create( socket ) {
-		this.player.socket = socket;
+	create( player ) {
+		this.player = player;
 
-		this._handlePlayerReady( this.player );
-		this._handleGameStart();
-		this._handlePlayerShot( this.player, this.opponent );
-		this._handlePlayerRematchRequest( this.player );
+		this._handlePlayerReady( player );
+		this._handlePlayerRequestRematch( player );
 	}
 
 	/**
-	 * @param {socket} socket Client socket.
+	 * @param {Player} opponent
 	 */
-	join( socket ) {
-		this.opponent.socket = socket;
+	join( opponent ) {
+		this.opponent = opponent;
 		this.status = 'full';
 
-		this._handlePlayerReady( this.opponent );
-		this._handlePlayerShot( this.opponent, this.player );
-		this._handlePlayerRematchRequest( this.opponent );
+		this._handleGameStart();
+		this._handlePlayerReady( opponent );
+		this._handlePlayerShot( opponent, this.player );
+		this._handlePlayerShot( this.player, opponent );
+		this._handlePlayerRequestRematch( opponent );
 	}
 
 	/**
@@ -96,6 +89,14 @@ class Game {
 	destroy() {
 		for ( const socket of this._socketServer.getSocketsInRoom( this.id ) ) {
 			socket.disconnect();
+		}
+
+		if ( this.player ) {
+			this.player.destroy();
+		}
+
+		if ( this.opponent ) {
+			this.opponent.destroy();
 		}
 
 		this.stopListening();
@@ -156,30 +157,28 @@ class Game {
 
 		socket.handleRequest( 'shot', ( response, position ) => {
 			if ( this.status != 'battle' ) {
-				response.error( 'invalid-game-status' );
-			} else if ( this.activePlayerId != player.id ) {
-				response.error( 'invalid-turn' );
-			} else {
-				const data = opponent.battlefield.shot( position );
-				const opponentShips = opponent.battlefield.shipsCollection;
-				const playerShips = player.battlefield.shipsCollection;
-
-				if ( data.type == 'missed' || data.notEmpty ) {
-					this.activePlayerId = opponent.id;
-				} else if ( data.sunk && Array.from( opponentShips ).every( ship => ship.isSunk ) ) {
-					data.winnerId = player.id;
-					data.winnerShips = Array.from( playerShips )
-						.filter( ship => !ship.isSunk )
-						.map( ship => ship.toJSON() );
-
-					this._handleRematch();
-				}
-
-				data.activePlayerId = this.activePlayerId;
-
-				response.success( data );
-				socket.sendToRoom( this.id, 'opponentShot', data );
+				return response.error( 'invalid-game-status' );
 			}
+
+			if ( this.activePlayerId != player.id ) {
+				return response.error( 'invalid-turn' );
+			}
+
+			const data = opponent.battlefield.shot( position );
+
+			data.activePlayerId = player.id;
+
+			if ( data.type == 'missed' || data.notEmpty ) {
+				data.activePlayerId = opponent.id;
+			} else if ( data.sunk && !getNotSunken( opponent.battlefield.shipsCollection ).length ) {
+				data.winnerId = player.id;
+				data.winnerShips = getNotSunken( player.battlefield.shipsCollection );
+				this._handleRematch();
+			}
+
+			response.success( data );
+			socket.sendToRoom( this.id, 'opponentShot', data );
+			this.activePlayerId = data.activePlayerId;
 		} );
 	}
 
@@ -189,7 +188,7 @@ class Game {
 	 * @private
 	 * @param {Player} player Player instance.
 	 */
-	_handlePlayerRematchRequest( player ) {
+	_handlePlayerRequestRematch( player ) {
 		const socket = player.socket;
 
 		socket.handleRequest( 'requestRematch', response => {
@@ -220,5 +219,10 @@ class Game {
 }
 
 mix( Game, ObservableMixin );
-
 module.exports = Game;
+
+function getNotSunken( ships ) {
+	return Array.from( ships )
+		.filter( ship => !ship.isSunk )
+		.map( ship => ship.toJSON() );
+}
