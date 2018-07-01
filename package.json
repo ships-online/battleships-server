@@ -31,7 +31,7 @@
     "nyc": "^11.2.1"
   },
   "dependencies": {
-    "@ckeditor/ckeditor5-utils": "^1.0.0-alpha.1",
+    "@ckeditor/ckeditor5-utils": "^10.1.0",
     "battleships-dev-tools": "https://github.com/ships-online/battleships-dev-tools.git",
     "battleships-engine": "https://github.com/ships-online/battleships-engine.git",
     "battleships-core": "https://github.com/ships-online/battleships-core.git",
