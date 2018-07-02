@@ -53,7 +53,7 @@ class Games {
 
 			response.success( {
 				gameId: game.id,
-				playerId: game.player.id
+				playerId: player.id
 			} );
 
 			socket.on( 'disconnect', () => this._handleHostLeft( game ) );
@@ -63,7 +63,6 @@ class Games {
 			const game = this._games.get( gameId );
 			const player = game.player;
 			const { size, shipsSchema } = player.battlefield.settings;
-			let opponent;
 
 			if ( !game ) {
 				return response.error( 'not-exist' );
@@ -75,25 +74,29 @@ class Games {
 
 			if ( options.ai ) {
 				const aiSocket = new LocalSocket( game._socketServer );
-				opponent = new AiPlayer( new OpponentBattlefield( size, shipsSchema ), aiSocket, game );
+				const opponent = new AiPlayer( new OpponentBattlefield( size, shipsSchema ), aiSocket, game );
 
 				this._handleClientAccept( game, opponent );
 				opponent.start();
+
+				response.success( {
+					opponentId: opponent.id
+				} );
 			} else {
-				opponent = new Player( new OpponentBattlefield( size, shipsSchema ), socket );
+				const opponent = new Player( new OpponentBattlefield( size, shipsSchema ), socket );
 
 				this._handleClientAccept( game, opponent );
 				socket.join( game.id );
 				socket.on( 'disconnect', () => this._handleClientLeft( game, socket.id ) );
-			}
 
-			response.success( {
-				settings: player.battlefield.settings,
-				playerId: opponent.id,
-				opponentId: player.id,
-				isOpponentReady: player.isReady,
-				guestsNumber: Array.from( this._socketServer.getSocketsInRoom( game.id ) ).length - 1
-			} );
+				response.success( {
+					settings: player.battlefield.settings,
+					playerId: opponent.id,
+					opponentId: player.id,
+					isOpponentReady: player.isReady,
+					guestsNumber: Array.from( this._socketServer.getSocketsInRoom( game.id ) ).length - 1
+				} );
+			}
 		} );
 	}
 
