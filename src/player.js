@@ -58,7 +58,13 @@ class Player {
 	 * @returns {Promise} Promise which will be resolved when player will be ready.
 	 */
 	waitForReady() {
-		return new Promise( resolve => this.once( 'change:isReady', resolve ) );
+		return new Promise( resolve => {
+			if ( this.isReady ) {
+				resolve();
+			} else {
+				this.once( 'change:isReady', resolve );
+			}
+		} );
 	}
 
 	/**
