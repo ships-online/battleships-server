@@ -36,9 +36,38 @@ class AiPlayer extends Player {
 	 */
 	start() {
 		const game = this._game;
-		const ships = this._getShipsConfiguration();
 
 		this.socket.request( 'accept' );
+
+		this._setShips();
+
+		this.listenTo( game, 'tick', () => {
+			if ( game.status === 'battle' ) {
+				if ( this.id === game.activePlayerId ) {
+					wait( 1000 ).then( () => {
+						this.socket.request( 'shot', this._getShootPosition() );
+					} );
+				}
+
+				return;
+			}
+
+			if ( game.status === 'over' ) {
+				wait( 1000 ).then( () => {
+					this.socket.request( 'requestRematch' );
+				} );
+
+				return;
+			}
+
+			if ( game.status === 'full' ) {
+				this._setShips();
+			}
+		} );
+	}
+
+	_setShips() {
+		const ships = this._getShipsConfiguration();
 
 		if ( !ships ) {
 			this.socket.sendToRoom( this._game.id, 'gameOver', 'opponent-cant-arrange-ships' );
@@ -47,20 +76,6 @@ class AiPlayer extends Player {
 		}
 
 		this.socket.request( 'ready', ships );
-
-		this.listenTo( game, 'set:activePlayerId', ( evt, name, id ) => {
-			if ( id !== this.id ) {
-				return;
-			}
-
-			if ( game.status == 'battle' ) {
-				// Added a timeout for the better UX.
-				// Opponent should not react immediately to the state change.
-				setTimeout( () => {
-					this.socket.request( 'shot', this._getShootPosition() );
-				}, 1000 );
-			}
-		} );
 	}
 
 	/**
@@ -164,7 +179,7 @@ class AiPlayer extends Player {
 		positions = uniqWith( positions, isEqual );
 
 		return positions
-			.filter( position => isPositionInBounds( position, size - 1 ) && isFieldEmpty( battlefield.getField( position ) ) );
+			.filter( position => isPositionInBounds( position, size ) && isFieldEmpty( battlefield.getField( position ) ) );
 	}
 }
 
@@ -172,4 +187,8 @@ module.exports = AiPlayer;
 
 function isFieldEmpty( field ) {
 	return !field || ( !field.isMissed && !field.isHit );
+}
+
+function wait( ms ) {
+	return new Promise( resolve => setTimeout( resolve, ms ) );
 }

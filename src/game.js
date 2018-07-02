@@ -171,6 +171,7 @@ class Game {
 			if ( data.type == 'missed' || data.notEmpty ) {
 				data.activePlayerId = opponent.id;
 			} else if ( data.sunk && !getNotSunken( opponent.battlefield.shipsCollection ).length ) {
+				this.status = 'over';
 				data.activePlayerId = null;
 				data.winnerId = player.id;
 				data.winnerShips = getNotSunken( player.battlefield.shipsCollection );
@@ -180,6 +181,8 @@ class Game {
 			response.success( data );
 			socket.sendToRoom( this.id, 'opponentShot', data );
 			this.activePlayerId = data.activePlayerId;
+
+			this.fire( 'tick' );
 		} );
 	}
 
@@ -206,15 +209,16 @@ class Game {
 	 */
 	_handleRematch() {
 		Promise.all( [ this.player.waitForRematch(), this.opponent.waitForRematch() ] ).then( () => {
+			this.status = 'full';
 			this.player.battlefield.shipsCollection.clear();
 			this.player.reset();
 			this.opponent.battlefield.shipsCollection.clear();
 			this.opponent.reset();
 			this.activePlayerId = null;
-			this.status = 'full';
 			this._socketServer.sendToRoom( this.id, 'rematch' );
 
 			this._handleGameStart();
+			this.fire( 'tick' );
 		} );
 	}
 }
