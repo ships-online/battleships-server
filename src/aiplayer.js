@@ -103,7 +103,7 @@ class AiPlayer extends Player {
 		const hitFields = [];
 		let positions = [];
 
-		Array.from( ship.getCoordinates() ).forEach( ( position, index ) => {
+		Array.from( ship.getPositions() ).forEach( ( position, index ) => {
 			if ( ship.damages[ index ] ) {
 				hitFields.push( position );
 			}
