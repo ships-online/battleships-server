@@ -2,26 +2,23 @@
 
 const fs = require( 'fs' );
 const compiler = require( 'battleships-dev-tools/lib/tasks/compile.js' );
-const replace = {
-	'@ckeditor/ckeditor5-': '../../@ckeditor/ckeditor5-',
-	'battleships-': '../../@ckeditor/battleships-'
-};
+const relative = [ '@ckeditor/ckeditor5-utils', 'battleships-engine', 'battleships-core' ];
 
 Promise.all( [
 	compiler( {
 		src: getPackageDirectory( 'battleships-engine' ) + '/battleships-engine/src',
 		dest: 'lib/battleships-engine/src',
-		replace
+		relative
 	} ),
 	compiler( {
 		src: getPackageDirectory( 'battleships-core' ) + '/battleships-core/tests',
 		dest: 'lib/battleships-core/tests',
-		replace
+		relative
 	} ),
 	compiler( {
 		src: getPackageDirectory( '@ckeditor/ckeditor5-utils' ) + '/@ckeditor/ckeditor5-utils/src',
 		dest: 'lib/@ckeditor/ckeditor5-utils/src',
-		replace
+		relative
 	} )
 ] );
 
