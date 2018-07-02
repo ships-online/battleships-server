@@ -171,6 +171,7 @@ class Game {
 			if ( data.type == 'missed' || data.notEmpty ) {
 				data.activePlayerId = opponent.id;
 			} else if ( data.sunk && !getNotSunken( opponent.battlefield.shipsCollection ).length ) {
+				data.activePlayerId = null;
 				data.winnerId = player.id;
 				data.winnerShips = getNotSunken( player.battlefield.shipsCollection );
 				this._handleRematch();
