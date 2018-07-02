@@ -3,14 +3,15 @@
 const Player = require( './player.js' );
 const PlayerBattlefield = require( '../lib/battleships-engine/src/playerbattlefield.js' ).default;
 
-const random = require( '../lib/battleships-engine/src/utils/random.js' ).default;
+const random = require( '../lib/@ckeditor/ckeditor5-utils/src/lib/lodash/random.js' ).default;
 const uniqWith = require( '../lib/@ckeditor/ckeditor5-utils/src/lib/lodash/uniqWith.js' ).default;
 const differenceWith = require( '../lib/@ckeditor/ckeditor5-utils/src/lib/lodash/differenceWith.js' ).default;
 const isEqual = require( '../lib/@ckeditor/ckeditor5-utils/src/lib/lodash/isEqual.js' ).default;
 const {
-	getSurroundingPositions,
 	getSurroundingHorizontal,
-	getSurroundingVertical
+	getSurroundingVertical,
+	isPositionInBounds,
+	getPositionsAroundTheShip
 } = require( '../lib/battleships-engine/src/utils/positions.js' );
 
 class AiPlayer extends Player {
@@ -126,33 +127,11 @@ class AiPlayer extends Player {
 		positions = uniqWith( positions, isEqual );
 
 		return positions
-			.filter( position => isInBounds( position, size ) && isFieldEmpty( battlefield.getField( position ) ) );
+			.filter( position => isPositionInBounds( position, size - 1 ) && isFieldEmpty( battlefield.getField( position ) ) );
 	}
 }
 
 module.exports = AiPlayer;
-
-function isBetween( number, min, max ) {
-	return number >= min && number <= max;
-}
-
-function isInBounds( position, size ) {
-	const max = size - 1;
-	const x = position[ 0 ];
-	const y = position[ 1 ];
-
-	return isBetween( x, 0, max ) && isBetween( y, 0, max );
-}
-
-function getPositionsAroundTheShip( ship, size ) {
-	let positions = [];
-
-	for ( const position of ship.getCoordinates() ) {
-		positions = positions.concat( getSurroundingPositions( position ) );
-	}
-
-	return uniqWith( positions, isEqual ).filter( position => isInBounds( position, size - 1 ) );
-}
 
 function isFieldEmpty( field ) {
 	return !field || ( !field.isMissed && !field.isHit );
