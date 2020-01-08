@@ -15,7 +15,7 @@ class Games {
 	 */
 	constructor( socketServer ) {
 		/**
-		 * Instance for managing socket connections.
+		 * Socket server.
 		 *
 		 * @private
 		 * @type {SocketServer}
@@ -23,29 +23,21 @@ class Games {
 		this._socketServer = socketServer;
 
 		/**
-		 * Stores existing games.
+		 * Maps of pending games.
 		 *
 		 * @private
-		 * @type {Map}
+		 * @type {Map.<String,Game>}
 		 */
 		this._games = new Map();
 	}
 
 	/**
-	 * Starts listening on new socket connections.
+	 * @param {Object} socket Socket.io instance.
 	 */
-	init() {
-		this._socketServer.on( 'connect', ( evt, socket ) => this._handleNewConnection( socket ) );
-	}
-
-	/**
-	 * @private
-	 * @param {socket} socket Socket.io instance.
-	 */
-	_handleNewConnection( socket ) {
-		socket.handleRequest( 'create', ( response, settings ) => {
+	handleConnection( socket ) {
+		socket.handleRequest( 'create', ( response, data ) => {
 			const game = new Game( this._socketServer );
-			const player = new Player( new OpponentBattlefield( settings.size, settings.shipsSchema ), socket );
+			const player = new Player( new OpponentBattlefield( data.size, data.shipsSchema ), socket );
 
 			game.create( player );
 			socket.join( game.id );
@@ -68,7 +60,7 @@ class Games {
 				return response.error( 'not-exist' );
 			}
 
-			if ( game.status != 'available' ) {
+			if ( game.status !== 'available' ) {
 				return response.error( 'started' );
 			}
 
@@ -113,12 +105,12 @@ class Games {
 		} );
 
 		socket.handleRequest( 'accept', response => {
-			if ( game.status == 'available' ) {
+			if ( game.status === 'available' ) {
 				game.join( opponent );
 				response.success();
 				socket.sendToRoom( game.id, 'guestAccepted', { id: game.opponent.id } );
 			} else {
-				response.error( this.opponent.id == socket.id ? 'already-in-game' : 'not-available' );
+				response.error( this.opponent.id === socket.id ? 'already-in-game' : 'not-available' );
 			}
 		} );
 	}
@@ -142,20 +134,20 @@ class Games {
 		const opponent = game.opponent;
 
 		// When there was a battle then finish the game.
-		if ( game.status == 'battle' && opponent.id == clientId ) {
+		if ( game.status === 'battle' && opponent.id === clientId ) {
 			this._socketServer.sendToRoom( game.id, 'gameOver', 'opponent-left' );
 			this._games.delete( game.id );
 			game.destroy();
 		// Otherwise.
 		} else {
 			// Remove opponent from the game and make the game available.
-			if ( opponent && opponent.id == clientId ) {
+			if ( opponent && opponent.id === clientId ) {
 				opponent.destroy();
 				game.opponent = null;
 				game.status = 'available';
 			}
 
-			// Send information for the rest of the players that client has left the game.
+			// Send information to the rest of the players that client has left the game.
 			this._socketServer.sendToRoom( game.id, 'playerLeft', {
 				opponentId: clientId,
 				guestsNumber: Array.from( this._socketServer.getSocketsInRoom( game.id ) ).length - 1

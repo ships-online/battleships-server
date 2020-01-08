@@ -11,6 +11,6 @@ const Games = require( './src/games.js' );
 const socketServer = new SocketServer( io );
 const games = new Games( socketServer );
 
-games.init();
+socketServer.on( 'connect', ( evt, socket ) => games.handleConnection( socket ) );
 
 console.log( `BattleShips socket server started on port: ${ port }` );

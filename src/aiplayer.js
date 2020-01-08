@@ -28,6 +28,10 @@ class AiPlayer extends Player {
 	constructor( battlefield, socket, game ) {
 		super( battlefield, socket );
 
+		/**
+		 * @type {Game}
+		 * @private
+		 */
 		this._game = game;
 	}
 
@@ -38,24 +42,21 @@ class AiPlayer extends Player {
 		const game = this._game;
 
 		this.socket.request( 'accept' );
-
 		this._setShips();
 
-		this.listenTo( game, 'tick', () => {
+		this.listenTo( game, 'tick', async () => {
 			if ( game.status === 'battle' ) {
 				if ( this.id === game.activePlayerId ) {
-					wait( 1000 ).then( () => {
-						this.socket.request( 'shot', this._getShootPosition() );
-					} );
+					await wait( 1000 );
+					this.socket.request( 'shot', this._getShootPosition() );
 				}
 
 				return;
 			}
 
 			if ( game.status === 'over' ) {
-				wait( 1000 ).then( () => {
-					this.socket.request( 'requestRematch' );
-				} );
+				await wait( 1000 );
+				this.socket.request( 'requestRematch' );
 
 				return;
 			}
@@ -66,6 +67,9 @@ class AiPlayer extends Player {
 		} );
 	}
 
+	/**
+	 * @private
+	 */
 	_setShips() {
 		const ships = this._getShipsConfiguration();
 

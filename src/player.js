@@ -11,7 +11,7 @@ const mix = require( '../lib/@ckeditor/ckeditor5-utils/src/mix.js' ).default;
 class Player {
 	/**
 	 * @param {Battlefield} battlefield
-	 * @param {Socket} socket
+	 * @param {Object} socket
 	 */
 	constructor( battlefield, socket ) {
 		/**

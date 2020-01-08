@@ -6,13 +6,13 @@ const mix = require( '../lib/@ckeditor/ckeditor5-utils/src/mix.js' ).default;
 const ObservableMixin = require( '../lib/@ckeditor/ckeditor5-utils/src/observablemixin.js' ).default;
 
 /**
- * Class that represents single game.
+ * Class that represents a single game.
  *
  * @mixes ObservableMixin
  */
 class Game {
 	/**
-	 * @param {SocketServer} socketServer
+	 * @param {Object} socketServer
 	 */
 	constructor( socketServer ) {
 		/**
@@ -24,14 +24,14 @@ class Game {
 		this._socketServer = socketServer;
 
 		/**
-		 * Game id.
+		 * The game id.
 		 *
 		 * @type {String}
 		 */
 		this.id = shortId.generate();
 
 		/**
-		 * Id of active player.
+		 * Id of an active player.
 		 *
 		 * @observable
 		 * @member {String} #activePlayerId
@@ -39,7 +39,7 @@ class Game {
 		this.set( 'activePlayerId', null );
 
 		/**
-		 * Game status.
+		 * The game status.
 		 *
 		 * @observable
 		 * @member {'available'|'full'|'battle'|'over'} #status
@@ -47,15 +47,15 @@ class Game {
 		this.set( 'status', 'available' );
 
 		/**
-		 * Player (host) instance.
+		 * The player (host) instance.
 		 *
-		 * @type {Player}
+		 * @member {Player} #player
 		 */
 
 		/**
-		 * Opponent (client) instance.
+		 * The opponent (client) instance.
 		 *
-		 * @type {Player|AiPlayer}
+		 * @member {Player|AiPlayer} #opponent
 		 */
 	}
 
@@ -107,15 +107,15 @@ class Game {
 	 *
 	 * @private
 	 */
-	_handleGameStart() {
-		Promise.all( [
+	async _handleGameStart() {
+		await Promise.all( [
 			this.player.waitForReady(),
 			this.opponent.waitForReady()
-		] ).then( () => {
-			this.status = 'battle';
-			this.activePlayerId = this.player.id;
-			this._socketServer.sendToRoom( this.id, 'battleStarted', { activePlayerId: this.activePlayerId } );
-		} );
+		] );
+
+		this.status = 'battle';
+		this.activePlayerId = this.player.id;
+		this._socketServer.sendToRoom( this.id, 'battleStarted', { activePlayerId: this.activePlayerId } );
 	}
 
 	/**
@@ -156,11 +156,11 @@ class Game {
 		const socket = player.socket;
 
 		socket.handleRequest( 'shot', ( response, position ) => {
-			if ( this.status != 'battle' ) {
+			if ( this.status !== 'battle' ) {
 				return response.error( 'invalid-game-status' );
 			}
 
-			if ( this.activePlayerId != player.id ) {
+			if ( this.activePlayerId !== player.id ) {
 				return response.error( 'invalid-turn' );
 			}
 
@@ -168,7 +168,7 @@ class Game {
 
 			data.activePlayerId = player.id;
 
-			if ( data.type == 'missed' || data.notEmpty ) {
+			if ( data.type === 'missed' || data.notEmpty ) {
 				data.activePlayerId = opponent.id;
 			} else if ( data.sunk && !getNotSunken( opponent.battlefield.shipsCollection ).length ) {
 				this.status = 'over';
@@ -207,19 +207,19 @@ class Game {
 	 *
 	 * @private
 	 */
-	_handleRematch() {
-		Promise.all( [ this.player.waitForRematch(), this.opponent.waitForRematch() ] ).then( () => {
-			this.status = 'full';
-			this.player.battlefield.shipsCollection.clear();
-			this.player.reset();
-			this.opponent.battlefield.shipsCollection.clear();
-			this.opponent.reset();
-			this.activePlayerId = null;
-			this._socketServer.sendToRoom( this.id, 'rematch' );
+	async _handleRematch() {
+		await Promise.all( [ this.player.waitForRematch(), this.opponent.waitForRematch() ] );
 
-			this._handleGameStart();
-			this.fire( 'tick' );
-		} );
+		this.status = 'full';
+		this.player.battlefield.shipsCollection.clear();
+		this.player.reset();
+		this.opponent.battlefield.shipsCollection.clear();
+		this.opponent.reset();
+		this.activePlayerId = null;
+		this._socketServer.sendToRoom( this.id, 'rematch' );
+
+		this._handleGameStart();
+		this.fire( 'tick' );
 	}
 }
 

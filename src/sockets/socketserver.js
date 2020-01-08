@@ -10,21 +10,19 @@ const mix = require( '../../lib/@ckeditor/ckeditor5-utils/src/mix.js' ).default;
  */
 class SocketServer {
 	/**
-	 * @param {io} ioServer
+	 * @param {Object} socketIo
 	 */
-	constructor( ioServer ) {
+	constructor( socketIo ) {
 		/**
 		 * Socket.io server instance.
 		 *
 		 * @private
-		 * @type {io}
+		 * @type {Object}
 		 */
-		this._ioServer = ioServer;
+		this._socketIo = socketIo;
 
-		// Bind socket.io connect event to this class.
-		this._ioServer.on( 'connect', socket => {
-			this.fire( 'connect', new Socket( socket ) );
-		} );
+		// Expose socket.io#connect event as a class event.
+		this._socketIo.on( 'connect', socket => this.fire( 'connect', new Socket( socket ) ) );
 	}
 
 	/**
@@ -34,22 +32,22 @@ class SocketServer {
 	 * @param {*} args
 	 */
 	sendToRoom( roomId, ...args ) {
-		this._ioServer.sockets.in( roomId ).emit( ...args );
+		this._socketIo.sockets.in( roomId ).emit( ...args );
 	}
 
 	/**
-	 * Returns all sockets from the given room.
+	 * Generates a list of all sockets from the given room.
 	 *
 	 * @param {String} roomId
 	 */
 	* getSocketsInRoom( roomId ) {
-		const room = this._ioServer.sockets.adapter.rooms[ roomId ];
+		const room = this._socketIo.sockets.adapter.rooms[ roomId ];
 
 		if ( room ) {
-			const socketsInRoom = Object.keys( this._ioServer.sockets.adapter.rooms[ roomId ].sockets );
+			const socketsInRoom = Object.keys( this._socketIo.sockets.adapter.rooms[ roomId ].sockets );
 
 			for ( const socketId of socketsInRoom ) {
-				yield this._ioServer.sockets.connected[ socketId ];
+				yield this._socketIo.sockets.connected[ socketId ];
 			}
 		}
 	}
@@ -59,44 +57,44 @@ mix( SocketServer, EmitterMixin );
 module.exports.SocketServer = SocketServer;
 
 /**
- * Class that wraps single socket.io socket.
+ * Class that wraps single socket of socket.io.
  *
  * @private
  * @mixes EmitterMixin
  */
 class Socket {
 	/**
-	 * @param {socket} ioSocket Socket.io socket instance.
+	 * @param {Object} socket Socket.io socket instance.
 	 */
-	constructor( ioSocket ) {
+	constructor( socket ) {
 		/**
-		 * Socket.io socket.
+		 * Single socket of Socket.io.
 		 *
 		 * @private
-		 * @type {socket}
+		 * @type {Object}
 		 */
-		this._ioSocket = ioSocket;
+		this._socket = socket;
 
-		// Bind socket#disconnect to this class.
-		this._ioSocket.on( 'disconnect', () => this.fire( 'disconnect' ) );
+		// Expose socket#disconnect as a class event.
+		this._socket.on( 'disconnect', () => this.fire( 'disconnect' ) );
 	}
 
 	/**
-	 * Returns socket id.
+	 * Socket id.
 	 *
-	 * @returns {String}
+	 * @type {String}
 	 */
 	get id() {
-		return this._ioSocket.id;
+		return this._socket.id;
 	}
 
 	/**
-	 * Join to socket room.
+	 * Joins to the room of a given id.
 	 *
 	 * @param {String} roomId
 	 */
 	join( roomId ) {
-		this._ioSocket.join( roomId );
+		this._socket.join( roomId );
 	}
 
 	/**
@@ -105,7 +103,7 @@ class Socket {
 	 * @param {*} args
 	 */
 	send( ...args ) {
-		this._ioSocket.emit( ...args );
+		this._socket.emit( ...args );
 	}
 
 	/**
@@ -115,7 +113,7 @@ class Socket {
 	 * @param {*} args
 	 */
 	sendToRoom( roomId, ...args ) {
-		this._ioSocket.broadcast.to( roomId ).emit( ...args );
+		this._socket.broadcast.to( roomId ).emit( ...args );
 	}
 
 	/**
@@ -123,11 +121,11 @@ class Socket {
 	 * See {@link Response} class to se the response details.
 	 *
 	 * @param {String} eventName
-	 * @param {Function.<Response>} callback
+	 * @param {Function} callback
 	 */
 	handleRequest( eventName, callback ) {
-		this._ioSocket.on( eventName, ( ...args ) => {
-			callback( new Response( eventName, this._ioSocket ), ...args );
+		this._socket.on( eventName, ( ...args ) => {
+			callback( new Response( eventName, this._socket ), ...args );
 		} );
 	}
 
@@ -167,7 +165,7 @@ class Response {
 		 * @private
 		 * @type {socket}
 		 */
-		this._ioSocket = ioSocket;
+		this._socket = ioSocket;
 	}
 
 	/**
@@ -176,7 +174,7 @@ class Response {
 	 * @param {*} response Response data.
 	 */
 	success( response ) {
-		this._ioSocket.emit( this._eventName, { response } );
+		this._socket.emit( this._eventName, { response } );
 	}
 
 	/**
@@ -185,6 +183,6 @@ class Response {
 	 * @param {*} error Response data.
 	 */
 	error( error ) {
-		this._ioSocket.emit( this._eventName, { error } );
+		this._socket.emit( this._eventName, { error } );
 	}
 }
